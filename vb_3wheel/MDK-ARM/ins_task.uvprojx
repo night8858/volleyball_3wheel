@@ -595,6 +595,11 @@
               <FileType>1</FileType>
               <FilePath>..\bsp\boards\bsp_usart.c</FilePath>
             </File>
+            <File>
+              <FileName>bsp_buzzer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\bsp\boards\bsp_buzzer.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -629,6 +634,16 @@
               <FileName>remote_control.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\application\remote_control.c</FilePath>
+            </File>
+            <File>
+              <FileName>Variables.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\application\Variables.c</FilePath>
+            </File>
+            <File>
+              <FileName>bat_control.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\application\bat_control.c</FilePath>
             </File>
           </Files>
         </Group>

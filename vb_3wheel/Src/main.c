@@ -33,7 +33,11 @@
 #include "bsp_delay.h"
 #include "bsp_can.h"
 #include "remote_control.h"
+#include "bsp_buzzer.h"
 
+#include "chassis.h"
+#include "remote_control.h"
+#include "bat_control.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -106,12 +110,15 @@ int main(void)
   MX_CAN2_Init();
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
-    //基础初始化
+    //鍩虹鍒濆�???
     delay_init();
     can_filter_init();
     remote_control_init();
 
+    HAL_TIM_Base_Start(&htim4);
+    HAL_TIM_PWM_Start(&htim4 , TIM_CHANNEL_3);
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */

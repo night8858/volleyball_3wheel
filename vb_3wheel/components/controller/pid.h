@@ -45,6 +45,68 @@ typedef struct
     fp32 error[3]; //误差项 0最新 1上一次 2上上次
 
 } pid_type_def;
+
+
+/********increase mode*******/
+typedef struct 
+{
+  float kp;
+	float ki;
+	float kd;
+	
+	float dErrP;
+	float dErrI;
+	float dErrD;
+	
+	float errNow;
+	float errOld1;
+	float errOld2;
+
+	float dCtrOut;
+	float dOutMAX;
+	float ctrOut;
+	float OutMAX;
+	
+}s_pid_increase_t;//增量式
+/********absolute mode*******/
+//PID参数结构体
+typedef struct
+{
+  float Kp;//比例环节参数
+	float Ki;//积分环节参数
+	float Kd;//微分环节参数
+
+	float Perror;//比例偏差值
+	float Ierror;//积分偏差值
+	float Derror;//微分偏差值
+	
+	float Pout;//比例环节输出量
+	float Iout;//积分环节输出量
+	float Dout;//微分环节输出量
+	
+	float NowError;   //当前偏差
+	float LastError;  //上次偏差
+  float IerrorApartVal;//积分分离限制值
+	float IerrorLim;  //积分偏差上限
+	float PIDout;     //PID运算后输出量
+	float PIDoutMAX;  //PID运算后输出量上限
+}s_pid_absolute_t; //绝对式
+
+//实验室传统使用的pid函数
+void PID_IncrementMode(s_pid_increase_t *pid);
+void PID_AbsoluteMode(s_pid_absolute_t *pid);
+void pid_abs_param_init(s_pid_absolute_t *pid, float kp, float ki, float kd, float errILim, float MaxOutCur);
+void pid_abs_evaluation(s_pid_absolute_t *pid, float kp, float ki, float kd, float errILim, float MaxOutCur);
+int16_t motor_single_loop_PID(s_pid_absolute_t *single_pid, float target , float get);
+float motor_double_loop_PID(s_pid_absolute_t *pos_pid, s_pid_absolute_t *spd_pid, float externGet, float externSet, float internGet);
+float motor_double_loop_PID_integral_apart(s_pid_absolute_t *pos_pid, s_pid_absolute_t *spd_pid, float externGet, float externSet, \
+float internGet,float integral_apart_val);
+
+
+
+
+/////////////////////////////////////////////////////
+//以下为官方使用的pid函数
 /**
   * @brief          pid struct data init
   * @param[out]     pid: PID struct data point

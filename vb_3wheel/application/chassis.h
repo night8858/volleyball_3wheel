@@ -19,7 +19,7 @@
 #define M3505_MOTOR_SPEED_PID_MAX_OUT 15000.0f
 #define M3505_MOTOR_SPEED_PID_MAX_IOUT 14000.0f
 
-#define CHASSIS_ANGLE_PID_KP 700.0f
+#define CHASSIS_ANGLE_PID_KP 4000.0f
 #define CHASSIS_ANGLE_PID_KI 0.0f
 #define CHASSIS_ANGLE_PID_KD 1.2f
 #define CHASSIS_ANGLE_PID_MAX_OUT 12000.0f
@@ -41,13 +41,13 @@
 // 控制参数宏定义
 #define MOTOR_ECD_TO_RAD 0.000766990394f //      2*  PI  /8192
 #define CHASSIS_VX_KP 12                 // x速度比例
-#define CHASSIS_VY_KP 10                 // y速度比例
-#define CHASSIS_WZ_KP 0.005f             // 角速度比例
+#define CHASSIS_VY_KP 12                 // y速度比例
+#define CHASSIS_WZ_KP 40            // 角速度比例
 #define CHASSIS_STOP_LINE 12             // 停止线位置
 
 
 #define CHASSIS_ACCEL_X_NUM 0.1666666667f
-#define CHASSIS_ACCEL_Y_NUM 0.3333333333f
+#define CHASSIS_ACCEL_Y_NUM 0.1666666667f
 
 typedef struct
 {
@@ -122,7 +122,7 @@ typedef struct
 {
 
     const motor_measure_t *chassis_motor_measure; // 电机数据结构体
-    pid_type_def chassis_motor_gyro_pid;
+    s_pid_absolute_t M3508_pid_speed;
     uint16_t offset_ecd;
 
     float motor_speed;
@@ -144,21 +144,27 @@ typedef struct
 
 typedef enum
 {
-    CHASSIS_MODE_ARTIFICAL,
-    CHASSIS_MODE_AUTO,
-    CHASSIS_MODE_STOP,
+    MODE_ARTIFICAL,
+    MODE_AUTO,
+    MODE_STOP,
     
-} chassis_mode_t;
+    ARTIFICAL_CHASSIS,
+    ARTIFICAL_BAT,
+    ARTIFICAL_STRIKER,
+
+} control_mode_t;
 
 typedef struct
 {
     const RC_ctrl_t *chassis_RC;      // 底盘使用的遥控器指针, the point to remote control
     const fp32 *chassis_INS_angle;    // the point to the euler angle of gyro sensor.获取陀螺仪解算出的欧拉角指针
     chassis_motor_t chassis_motor;    // chassis motor data.底盘电机数据
-    pid_type_def motor_speed_pid[4];  // motor speed PID.底盘电机速度pid
-    pid_type_def chassis_angle_pid;   // follow angle PID.底盘跟随角度pid
-    chassis_mode_t chassis_mode;      // chassis mode.底盘模式
-    chassis_mode_t chassis_mode_last; // chassis mode set.底盘的上一次模式
+    control_mode_t chassis_mode;      // chassis mode.底盘模式
+    control_mode_t chassis_mode_last; // chassis mode set.底盘的上一次模式
+
+    control_mode_t control_mode_everone;      // control mode.控制模式细分
+
+    s_pid_absolute_t chassis_pid_angle;   //底盘角度pid
 
     first_order_filter_type_t chassis_cmd_slow_set_vx; // use first order filter to slow set-point.使用一阶低通滤波减缓设定值
     first_order_filter_type_t chassis_cmd_slow_set_vy; // use first order filter to slow set-point.使用一阶低通滤波减缓设定值
@@ -169,6 +175,10 @@ typedef struct
     fp32 vx_set; // chassis set vertical speed,positive means forward,unit m/s.底盘设定速度 前进方向 前为正，单位 m/s
     fp32 vy_set; // chassis set horizontal speed,positive means left,unit m/s.底盘设定速度 左右方向 左为正，单位 m/s
     fp32 wz_set; // chassis set rotation speed,positive means counterclockwise,unit rad/s.底盘设定旋转角速度，逆时针为正 单位 rad/s
+
+    int16_t chassis_vx_ch;
+    int16_t chassis_vy_ch;
+    int16_t chassis_wz_ch;
 
     fp32 chassis_yaw_set;
     fp32 chassis_yaw;
@@ -181,5 +191,6 @@ typedef struct
 } chassis_control_t;
 
 // extern void chasis_Task(void const * argument);
+
 
 #endif

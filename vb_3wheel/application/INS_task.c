@@ -33,6 +33,7 @@
 #include "ist8310driver.h"
 #include "pid.h"
 #include "bsp_usart.h"
+#include "chassis.h"
 
 #include "MahonyAHRS.h"
 #include "math.h"
@@ -97,12 +98,15 @@ uint8_t accel_temp_dma_rx_buf[SPI_DMA_ACCEL_TEMP_LENGHT];
 uint8_t accel_temp_dma_tx_buf[SPI_DMA_ACCEL_TEMP_LENGHT] = {0xA2,0xFF,0xFF,0xFF};
 
 
-
+volatile uint8_t		gyro_flag = 0;//陀螺仪标志位
 volatile uint8_t gyro_update_flag = 0;
 volatile uint8_t accel_update_flag = 0;
 volatile uint8_t accel_temp_update_flag = 0;
 volatile uint8_t mag_update_flag = 0;
 volatile uint8_t imu_start_dma_flag = 0;
+
+s_AHRS_DATA_t IMU_Ang;  //用于计算欧拉角连续化的结构体
+s_IMU_all_Value IMU_All_Value;   //储存imu数据结构体
 
 bmi088_real_data_t bmi088_real_data;
 fp32 gyro_scale_factor[3][3] = {BMI088_BOARD_INSTALL_SPIN_MATRIX};
@@ -247,17 +251,74 @@ void INS_task(void const *pvParameters)
         get_angle(INS_quat, INS_angle + INS_YAW_ADDRESS_OFFSET, INS_angle + INS_PITCH_ADDRESS_OFFSET, INS_angle + INS_ROLL_ADDRESS_OFFSET);
 
 
+        AHRSgetAngle(&IMU_Ang,INS_angle);
+				
+				IMU_receive_all_Value(&IMU_All_Value , &IMU_Ang , INS_gyro , accel_fliter_3, &bmi088_real_data.temp);
+        
         //because no use ist8310 and save time, no use
         if(mag_update_flag &= 1 << IMU_DR_SHFITS)
         {
             mag_update_flag &= ~(1<< IMU_DR_SHFITS);
             mag_update_flag |= (1 << IMU_SPI_SHFITS);
-//            ist8310_read_mag(ist8310_real_data.mag);
         }
 
         //uart_dma_printf(&huart1 , "%f ,%f ,%f\n", INS_angle[0], INS_angle[1], INS_angle[2]);
     }
+} 
+
+
+/**
+ * @brief 将陀螺仪角度变为连续
+ * 
+ * @param finalData 
+ * @param qq 
+ */
+void AHRSgetAngle(s_AHRS_DATA_t* finalData ,fp32 qq[3] ) 
+{
+    static uint8_t isImuNotFirst = 0;
+    static float yawLast,pitchLast,rollLast;
+
+		finalData->yaw =   qq[0]* 180.0f / PI;
+		finalData->pitch = qq[2]* 180.0f / PI;
+		finalData->roll =  qq[1]* 180.0f / PI;
+		
+    if (isImuNotFirst == 0) 
+	{
+    isImuNotFirst = 1;
+    yawLast = finalData->yaw;
+		rollLast= finalData->roll;
+  }
+
+  /* Transform into continuous values */
+
+  if (finalData->yaw - yawLast > 115.0f)   finalData->circle_yaw--;
+  if (finalData->yaw - yawLast < -115.0f)  finalData->circle_yaw++;
+  
+  if (finalData->roll - rollLast > 115.0f)   finalData->circle_roll--;
+  if (finalData->roll - rollLast < -115.0f)  finalData->circle_roll++;
+
+  finalData->serial_Yaw   = finalData->circle_yaw * 360.0f + finalData->yaw;
+	finalData->serial_Roll  = finalData->circle_roll * 360.0f + finalData->roll;
+	finalData->serial_Pitch = finalData->pitch;
+  yawLast   = finalData->yaw;
+	rollLast  = finalData->roll;
+	pitchLast = finalData->pitch;
 }
+
+void IMU_receive_all_Value(s_IMU_all_Value*all_value , s_AHRS_DATA_t*IMU_ang , float gyro0[3] , float accel0[3], float *temperate0)
+{
+	all_value->accel.x = accel0[0];
+	all_value->accel.y = accel0[1];
+	all_value->accel.z = accel0[2];
+	all_value->yaw.yawAng   =  IMU_ang->serial_Yaw;
+	all_value->pit.pitAng   =  IMU_ang->serial_Pitch;
+	all_value->roll.rollAng =  IMU_ang->serial_Roll;
+	all_value->yaw.yawAngV   = gyro0[2];
+	all_value->pit.pitAngV   = gyro0[0];
+	all_value->roll.rollAngV = gyro0[1];
+	all_value->temp = *temperate0;
+}
+
 
 void AHRS_init(fp32 quat[4], fp32 accel[3], fp32 mag[3])
 {

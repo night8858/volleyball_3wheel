@@ -6,8 +6,11 @@
 #include "user_lib.h"
 #include "remote_control.h"
 #include "bsp_usart.h"
+#include "bsp_buzzer.h"
 #include "math.h"
 #include "INS_task.h"
+#include "Variables.h"
+
 
 #include "cmsis_os.h"
 #include "FreeRTOS.h"
@@ -32,8 +35,11 @@
 extern RC_ctrl_t rc_ctrl;
 extern UART_HandleTypeDef huart1;
 extern motor_measure_t motor_Date[8];
+extern s_IMU_all_Value IMU_All_Value; // 储存imu数据结构体
 
 chassis_control_t motor_control;
+s_pid_absolute_t M3508_speed_pid;
+
 
 #define ecd_format(ecd)         \
     {                           \
@@ -44,13 +50,10 @@ chassis_control_t motor_control;
     }
 
 static void motor_init(chassis_control_t *init);
-
-static void M3508_motor_speed_control(motor_3508_t *chassis_motor);
 static void motor_control_send(chassis_control_t *control_loop);
 static void chassis_feedback_update(chassis_control_t *feedback_update);
 static void chassis_movement_calc(chassis_control_t *motor_control);
 static void rc_to_motor_set(chassis_control_t *motor_control);
-static void chassis_wheel_speed_control(chassis_control_t *chassis_control);
 static void chassis_mode_set(chassis_control_t *chassis_control);
 static int16_t rc_dead_zone(int16_t rc_data);
 static void chassis_mode_switch(chassis_control_t *chassis_mode_change);
@@ -63,9 +66,10 @@ static void chassis_mode_switch(chassis_control_t *chassis_mode_change);
 //  主线程
 void chassis_task(void const *argument)
 {
-    vTaskDelay(2000);
+    vTaskDelay(5000);
 
     motor_init(&motor_control);
+    Di_Di();
     while (1)
     {
         // uart_dma_printf(&huart1,"%4.3f ,%1.1f ,%4.3f\n",
@@ -81,9 +85,8 @@ void chassis_task(void const *argument)
 
         chassis_movement_calc(&motor_control);
 
-        chassis_wheel_speed_control(&motor_control);
-
         motor_control_send(&motor_control);
+
         osDelay(1);
     }
 }
@@ -93,16 +96,10 @@ static void motor_init(chassis_control_t *init)
 {
     // 底盘速度环pid值
 
-    // chassis angle PID
-    // 底盘角度pid值
-    static const fp32 M3508_speed_pid[3] = {M3505_MOTOR_SPEED_PID_KP, M3505_MOTOR_SPEED_PID_KI, M3505_MOTOR_SPEED_PID_KD};
-    static const fp32 chassiss_angle_pid[3] = {CHASSIS_ANGLE_PID_KP, CHASSIS_ANGLE_PID_KI, CHASSIS_ANGLE_PID_KD};
-
     const static fp32 chassis_x_order_filter[1] = {CHASSIS_ACCEL_X_NUM};
     const static fp32 chassis_y_order_filter[1] = {CHASSIS_ACCEL_Y_NUM};
 
     // 电机数据指针获取
-
     init->chassis_motor.M3508[0].chassis_motor_measure = get_3508_M1_motor_measure_point();
     init->chassis_motor.M3508[1].chassis_motor_measure = get_3508_M2_motor_measure_point();
     init->chassis_motor.M3508[2].chassis_motor_measure = get_3508_M3_motor_measure_point();
@@ -114,15 +111,8 @@ static void motor_init(chassis_control_t *init)
 
     for (uint8_t i = 0; i < motor_3505_num; i++)
     {
-        PID_clear(&init->chassis_motor.M3508[i].chassis_motor_gyro_pid);
+        pid_abs_param_init(&init->chassis_motor.M3508[i].M3508_pid_speed, M3505_MOTOR_SPEED_PID_KP, M3505_MOTOR_SPEED_PID_KI, M3505_MOTOR_SPEED_PID_KD, M3505_MOTOR_SPEED_PID_MAX_IOUT, M3505_MOTOR_SPEED_PID_MAX_OUT);
     }
-
-    for (uint8_t i = 0; i < motor_3505_num; i++)
-    {
-        PID_init(&init->chassis_motor.M3508[i].chassis_motor_gyro_pid, PID_POSITION, M3508_speed_pid, M3505_MOTOR_SPEED_PID_MAX_IOUT, M3505_MOTOR_SPEED_PID_MAX_OUT);
-    }
-    PID_init(&init->chassis_angle_pid, PID_POSITION, chassiss_angle_pid, CHASSIS_ANGLE_PID_MAX_IOUT, CHASSIS_ANGLE_PID_MAX_OUT);
-    // 清除所有PID
 
     first_order_filter_init(&init->chassis_cmd_slow_set_vx, 0.002f, chassis_x_order_filter);
     first_order_filter_init(&init->chassis_cmd_slow_set_vy, 0.002f, chassis_y_order_filter);
@@ -135,6 +125,7 @@ static void motor_init(chassis_control_t *init)
     init->chassis_yaw = *(init->chassis_INS_angle + INS_YAW_ADDRESS_OFFSET); // 底盘姿态角度初始化
 }
 
+
 // 底盘运动模式设定
 static void chassis_mode_set(chassis_control_t *chassis_control)
 {
@@ -143,17 +134,32 @@ static void chassis_mode_set(chassis_control_t *chassis_control)
         return;
     }
 
+    // 手动模式
     if (chassis_control->chassis_RC->rc.s[0] == 1)
     {
-        chassis_control->chassis_mode = CHASSIS_MODE_ARTIFICAL;
+        chassis_control->chassis_mode = MODE_ARTIFICAL;
+
+        if (chassis_control->chassis_RC->rc.s[1] == 1)
+        {
+            chassis_control->control_mode_everone == ARTIFICAL_CHASSIS;
+        }
+        if (chassis_control->chassis_RC->rc.s[1] == 2)
+        {
+            chassis_control->control_mode_everone == ARTIFICAL_BAT;
+        }
+        if (chassis_control->chassis_RC->rc.s[1] == 0)
+        {
+            chassis_control->control_mode_everone == ARTIFICAL_STRIKER;
+        }
     }
+
     else if (chassis_control->chassis_RC->rc.s[0] == 2)
     {
-        chassis_control->chassis_mode = CHASSIS_MODE_AUTO;
+        chassis_control->chassis_mode = MODE_AUTO;
     }
     else if (chassis_control->chassis_RC->rc.s[0] == 3)
     {
-        chassis_control->chassis_mode = CHASSIS_MODE_STOP;
+        chassis_control->chassis_mode = MODE_STOP;
     }
 }
 
@@ -172,13 +178,13 @@ static void chassis_mode_switch(chassis_control_t *chassis_mode_change)
     }
 
     // 手动转自动处理
-    if (chassis_mode_change->chassis_mode_last == CHASSIS_MODE_ARTIFICAL && chassis_mode_change->chassis_mode == CHASSIS_MODE_AUTO)
+    if (chassis_mode_change->chassis_mode_last == MODE_ARTIFICAL && chassis_mode_change->chassis_mode == MODE_AUTO)
     {
         /* code */
     }
 
     // 自动转手动处理
-    if (chassis_mode_change->chassis_mode_last == CHASSIS_MODE_AUTO && chassis_mode_change->chassis_mode == CHASSIS_MODE_ARTIFICAL)
+    if (chassis_mode_change->chassis_mode_last == MODE_AUTO && chassis_mode_change->chassis_mode == MODE_ARTIFICAL)
     {
         /* code */
     }
@@ -187,17 +193,8 @@ static void chassis_mode_switch(chassis_control_t *chassis_mode_change)
 }
 
 // 3508的pid计算
-static void M3508_motor_speed_control(motor_3508_t *chassis_motor)
-{
-    if (chassis_motor == NULL)
-    {
-        return;
-    }
 
-    // 速度环pid
-    chassis_motor->current_set = PID_calc(&chassis_motor->chassis_motor_gyro_pid, chassis_motor->motor_speed, chassis_motor->motor_speed_set); // 控制值赋值
-    chassis_motor->given_current = (int16_t)(chassis_motor->current_set);
-}
+// 速度环pid
 
 // 底盘的数据反馈
 static void chassis_feedback_update(chassis_control_t *feedback_update)
@@ -206,19 +203,18 @@ static void chassis_feedback_update(chassis_control_t *feedback_update)
     {
         return;
     }
-   // 数据更新,各个电机的速度数据
+    // 数据更新,各个电机的速度数据
     for (uint8_t i = 0; i < motor_3505_num; i++)
     {
         feedback_update->chassis_motor.M3508[i].motor_speed = feedback_update->chassis_motor.M3508[i].chassis_motor_measure->speed_rpm;
     }
- 
+
     // 更新底盘纵向速度 x， 平移速度y，旋转速度wz，坐标系为右手系
     feedback_update->vx = feedback_update->chassis_motor.M3508[0].motor_speed * sqrt(3) / 2 - feedback_update->chassis_motor.M3508[1].motor_speed * sqrt(3) / 2;
     feedback_update->vy = feedback_update->chassis_motor.M3508[2].motor_speed - 0.5f * (feedback_update->chassis_motor.M3508[1].motor_speed + feedback_update->chassis_motor.M3508[1].motor_speed);
     feedback_update->wz = (feedback_update->chassis_motor.M3508[0].motor_speed + feedback_update->chassis_motor.M3508[1].motor_speed + feedback_update->chassis_motor.M3508[2].motor_speed) / 0.5f;
 
-    // calculate chassis euler angle, if chassis add a new gyro sensor,please change this code
-    // 计算底盘姿态角度, 如果底盘上有陀螺仪请更改这部分代码
+    // 计算底盘姿态角度, 底盘上有陀螺仪
     feedback_update->chassis_yaw = rad_format(*(feedback_update->chassis_INS_angle + INS_YAW_ADDRESS_OFFSET)); // - chassis_move_update->chassis_yaw_motor->relative_angle);
 }
 
@@ -234,7 +230,9 @@ static void motor_control_send(chassis_control_t *control_loop)
     // 计算所有3508电机pid
     for (uint8_t i = 0; i < motor_3505_num; i++)
     {
-        M3508_motor_speed_control(&control_loop->chassis_motor.M3508[i]);
+        motor_single_loop_PID(&control_loop->chassis_motor.M3508[i].M3508_pid_speed, control_loop->chassis_motor.M3508[i].motor_speed_set, control_loop->chassis_motor.M3508[i].motor_speed);
+        motor_control.chassis_motor.M3508[i].given_current = control_loop->chassis_motor.M3508[i].M3508_pid_speed.PIDout;
+        motor_control.chassis_motor.M3508[i].current_set = (int16_t)motor_control.chassis_motor.M3508[i].given_current;
     }
 
     // 发送给电机数据
@@ -249,28 +247,36 @@ static void rc_to_motor_set(chassis_control_t *motor_control)
     {
         return;
     }
-    motor_control->vx_set = 0.0f;
-    motor_control->vy_set = 0.0f;
-    motor_control->wz_set = 0.0f;
 
-        motor_control->vx_set = rc_dead_zone(motor_control->chassis_RC->rc.ch[3]) * CHASSIS_VX_KP;
-        motor_control->vy_set = rc_dead_zone(-(motor_control->chassis_RC->rc.ch[2])) * CHASSIS_VY_KP;
-        motor_control->wz_set = rc_dead_zone(motor_control->chassis_RC->rc.ch[0]) * CHASSIS_WZ_KP;
+    // 手动模式的遥控器赋值
+    if (motor_control->chassis_mode == MODE_ARTIFICAL)
+    {
 
-        first_order_filter_cali(&motor_control->chassis_cmd_slow_set_vx, motor_control->vx_set);
-        first_order_filter_cali(&motor_control->chassis_cmd_slow_set_vy, motor_control->vy_set);
+        motor_control->chassis_vx_ch = 0.0f;
+        motor_control->chassis_vy_ch = 0.0f;
+        motor_control->chassis_wz_ch = 0.0f;
+
+        motor_control->chassis_vx_ch = rc_dead_zone(motor_control->chassis_RC->rc.ch[3]) * CHASSIS_VX_KP;
+        motor_control->chassis_vy_ch = rc_dead_zone(-(motor_control->chassis_RC->rc.ch[2])) * CHASSIS_VY_KP;
+        motor_control->chassis_wz_ch = rc_dead_zone(motor_control->chassis_RC->rc.ch[0]) * CHASSIS_WZ_KP;
+
+        first_order_filter_cali(&motor_control->chassis_cmd_slow_set_vx, motor_control->chassis_vx_ch);
+        first_order_filter_cali(&motor_control->chassis_cmd_slow_set_vy, motor_control->chassis_vy_ch);
 
         // 停止区间
-        if (motor_control->vx_set < 12 * CHASSIS_VX_KP && motor_control->vx_set < -12 * CHASSIS_VY_KP)
+        if (motor_control->chassis_vx_ch < 12 * CHASSIS_VX_KP && motor_control->chassis_vx_ch < -12 * CHASSIS_VY_KP)
         {
-            motor_control->vx_set = 0.0f;
+            motor_control->chassis_vx_ch = 0.0f;
         }
 
-        if (motor_control->vy_set < 12 * CHASSIS_VX_KP && motor_control->vy_set < -12 * CHASSIS_VY_KP)
+        if (motor_control->chassis_vy_ch < 12 * CHASSIS_VX_KP && motor_control->chassis_vy_ch < -12 * CHASSIS_VY_KP)
         {
-            motor_control->vy_set = 0.0f;
+            motor_control->chassis_vy_ch = 0.0f;
         }
-    
+
+        motor_control->vx_set = motor_control->chassis_cmd_slow_set_vx.out;
+        motor_control->vy_set = motor_control->chassis_cmd_slow_set_vy.out;
+    }
 }
 
 // 运动计算
@@ -281,69 +287,67 @@ static void chassis_movement_calc(chassis_control_t *chassis_control)
     {
         return;
     }
-    fp32 angle_set = 0.0f;
-    
-    if (chassis_control->chassis_mode == CHASSIS_MODE_ARTIFICAL)
-    {
-    
-    fp32 delat_angle = 0.0f;
-    // set chassis yaw angle set-point
-    angle_set = chassis_control->chassis_yaw;
-    // 设置底盘控制的角度
-    chassis_control->chassis_yaw_set = chassis_control->chassis_yaw;
-    // 计算底盘角度差
-    delat_angle = rad_format(chassis_control->chassis_yaw_set - chassis_control->chassis_yaw);
-    // calculate rotation speed
-    // 计算旋转的角速度
-    chassis_control->wz_set += PID_calc(&chassis_control->chassis_angle_pid, 0.0f, delat_angle);
-    // speed limit
 
+    fp32 angle_set = 0.0f;
+    float motor_speed_calc[motor_3505_num] = {0.0f, 0.0f, 0.0f};
+
+    if (chassis_control->chassis_mode == MODE_ARTIFICAL)
+    {
+
+        fp32 delat_angle = 0.0f;
+        // set chassis yaw angle set-point
+        angle_set = chassis_control->chassis_yaw;
+        // 设置底盘控制的角度
+        chassis_control->chassis_yaw_set = chassis_control->chassis_yaw;
+        // 计算底盘角度差
+        delat_angle = rad_format(chassis_control->chassis_yaw_set - chassis_control->chassis_yaw);
+        // calculate rotation speed
+        // 计算旋转的角速度,输入值与角度补正的和
+        chassis_control->wz_set = chassis_control->chassis_wz_ch + motor_single_loop_PID(&chassis_control->chassis_pid_angle, 0.0f, delat_angle);
+        // speed limit
+
+        // 计算各个电机速度,三全向解算
+        motor_speed_calc[0] = RofCenter * chassis_control->wz_set / 3 + chassis_control->vx_set * sqrt(3) / 3 - chassis_control->vy_set / 3;
+        motor_speed_calc[1] = RofCenter * chassis_control->wz_set / 3 - chassis_control->vx_set * sqrt(3) / 3 - chassis_control->vy_set / 3;
+        motor_speed_calc[2] = RofCenter * chassis_control->wz_set / 3 + chassis_control->vy_set * 2 / 3;
+
+        for (uint8_t i = 0; i < motor_3505_num; i++)
+        {
+            chassis_control->chassis_motor.M3508[i].motor_speed_set = motor_speed_calc[i];
+        }
     }
 
-    if (chassis_control->chassis_mode == CHASSIS_MODE_STOP)
+    if (chassis_control->chassis_mode == MODE_STOP)
     {
         chassis_control->chassis_yaw_set = rad_format(angle_set);
         fp32 delat_angle = 0.0f;
-    // calculate rotation speed
-    // 计算旋转的角速度
+        // calculate rotation speed
+        // 计算旋转的角速度
         chassis_control->wz_set = 0.0;
         chassis_control->vx_set = 0.0f;
         chassis_control->vy_set = 0.0f;
+
+        for (uint8_t i = 0; i < motor_3505_num; i++)
+        {
+            chassis_control->chassis_motor.M3508[i].motor_speed_set = motor_speed_calc[i];
+        }
     }
-    
 
     // vofa调试用的代码
     // uart_dma_printf(&huart1,"%4.3d ,%4.3d\n",line_speed_x , line_speed_y);
-}
-
-static void chassis_wheel_speed_control(chassis_control_t *chassis_control)
-{
-    // 电机速度计算数组
-    float motor_speed_calc[motor_3505_num] = {0.0f, 0.0f, 0.0f};
-
-    // 计算各个电机速度,三全向解算
-    motor_speed_calc[0] = RofCenter * chassis_control->wz_set / 3 + chassis_control->vx_set * sqrt(3) / 3 + chassis_control->vy_set / 3;
-    motor_speed_calc[1] = RofCenter * chassis_control->wz_set / 3 - chassis_control->vx_set * sqrt(3) / 3 - chassis_control->vy_set / 3;
-    motor_speed_calc[2] = RofCenter * chassis_control->wz_set / 3 + chassis_control->vy_set * 2 / 3;
-
-    for (uint8_t i = 0; i < motor_3505_num; i++)
-    {
-        chassis_control->chassis_motor.M3508[i].motor_speed_set = motor_speed_calc[i];
-    }
-
 }
 
 // 设定摇杆死区为10
 static int16_t rc_dead_zone(int16_t rc_data)
 {
     int16_t temp = rc_data;
-    if ( fabs(rc_data) < 10)
+    if (fabs(rc_data) < 10)
     {
         return 0;
     }
     else
-    rc_data = temp;
-        return rc_data;
+        rc_data = temp;
+    return rc_data;
 }
 
 // 自动模式运动计算

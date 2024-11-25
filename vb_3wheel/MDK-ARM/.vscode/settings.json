@@ -4,7 +4,7 @@
   "C_Cpp_Runner.debuggerPath": "gdb",
   "C_Cpp_Runner.cStandard": "",
   "C_Cpp_Runner.cppStandard": "",
-  "C_Cpp_Runner.msvcBatchPath": "",
+  "C_Cpp_Runner.msvcBatchPath": "C:/Program Files/Microsoft Visual Studio/VR_NR/Community/VC/Auxiliary/Build/vcvarsall.bat",
   "C_Cpp_Runner.useMsvc": false,
   "C_Cpp_Runner.warnings": [
     "-Wall",
@@ -38,27 +38,27 @@
   "C_Cpp_Runner.compilerArgs": [],
   "C_Cpp_Runner.linkerArgs": [],
   "C_Cpp_Runner.includePaths": [
-    "d:\\资料文献，手册，规格等\\Development-Board-C-Examples-master\\Development-Board-C-Examples-master\\18.ins_task\\Inc",
-    "d:\\资料文献，手册，规格等\\Development-Board-C-Examples-master\\Development-Board-C-Examples-master\\18.ins_task\\Drivers\\STM32F4xx_HAL_Driver\\Inc",
-    "d:\\资料文献，手册，规格等\\Development-Board-C-Examples-master\\Development-Board-C-Examples-master\\18.ins_task\\Drivers\\STM32F4xx_HAL_Driver\\Inc\\Legacy",
-    "d:\\资料文献，手册，规格等\\Development-Board-C-Examples-master\\Development-Board-C-Examples-master\\18.ins_task\\Middlewares\\Third_Party\\FreeRTOS\\Source\\include",
-    "d:\\资料文献，手册，规格等\\Development-Board-C-Examples-master\\Development-Board-C-Examples-master\\18.ins_task\\Middlewares\\Third_Party\\FreeRTOS\\Source\\CMSIS_RTOS",
-    "d:\\资料文献，手册，规格等\\Development-Board-C-Examples-master\\Development-Board-C-Examples-master\\18.ins_task\\Middlewares\\Third_Party\\FreeRTOS\\Source\\portable\\RVDS\\ARM_CM4F",
-    "d:\\资料文献，手册，规格等\\Development-Board-C-Examples-master\\Development-Board-C-Examples-master\\18.ins_task\\Drivers\\CMSIS\\Device\\ST\\STM32F4xx\\Include",
-    "d:\\资料文献，手册，规格等\\Development-Board-C-Examples-master\\Development-Board-C-Examples-master\\18.ins_task\\Drivers\\CMSIS\\Include",
-    "d:\\资料文献，手册，规格等\\Development-Board-C-Examples-master\\Development-Board-C-Examples-master\\18.ins_task\\application",
-    "d:\\资料文献，手册，规格等\\Development-Board-C-Examples-master\\Development-Board-C-Examples-master\\18.ins_task\\bsp\\boards",
-    "d:\\资料文献，手册，规格等\\Development-Board-C-Examples-master\\Development-Board-C-Examples-master\\18.ins_task\\components\\algorithm",
-    "d:\\资料文献，手册，规格等\\Development-Board-C-Examples-master\\Development-Board-C-Examples-master\\18.ins_task\\components\\controller",
-    "d:\\资料文献，手册，规格等\\Development-Board-C-Examples-master\\Development-Board-C-Examples-master\\18.ins_task\\components\\devices",
-    "d:\\资料文献，手册，规格等\\Development-Board-C-Examples-master\\Development-Board-C-Examples-master\\18.ins_task\\components\\support",
+    "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\Inc",
+    "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\Drivers\\STM32F4xx_HAL_Driver\\Inc",
+    "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\Drivers\\STM32F4xx_HAL_Driver\\Inc\\Legacy",
+    "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\Middlewares\\Third_Party\\FreeRTOS\\Source\\include",
+    "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\Middlewares\\Third_Party\\FreeRTOS\\Source\\CMSIS_RTOS",
+    "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\Middlewares\\Third_Party\\FreeRTOS\\Source\\portable\\RVDS\\ARM_CM4F",
+    "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\Drivers\\CMSIS\\Device\\ST\\STM32F4xx\\Include",
+    "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\Drivers\\CMSIS\\Include",
+    "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\application",
+    "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\bsp\\boards",
+    "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\components\\algorithm",
+    "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\components\\controller",
+    "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\components\\devices",
+    "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\components\\support",
     "D:\\D P J\\ARM\\ARMCC\\include",
     "D:\\D P J\\ARM\\ARMCC\\include\\rw",
-    "d:\\资料文献，手册，规格等\\Development-Board-C-Examples-master\\Development-Board-C-Examples-master\\18.ins_task\\MDK-ARM",
-    "d:\\资料文献，手册，规格等\\Development-Board-C-Examples-master\\Development-Board-C-Examples-master\\18.ins_task\\Src",
-    "d:\\资料文献，手册，规格等\\Development-Board-C-Examples-master\\Development-Board-C-Examples-master\\18.ins_task\\Drivers\\STM32F4xx_HAL_Driver\\Src",
-    "d:\\资料文献，手册，规格等\\Development-Board-C-Examples-master\\Development-Board-C-Examples-master\\18.ins_task\\Middlewares\\Third_Party\\FreeRTOS\\Source",
-    "d:\\资料文献，手册，规格等\\Development-Board-C-Examples-master\\Development-Board-C-Examples-master\\18.ins_task\\Middlewares\\Third_Party\\FreeRTOS\\Source\\portable\\MemMang"
+    "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\MDK-ARM",
+    "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\Src",
+    "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\Drivers\\STM32F4xx_HAL_Driver\\Src",
+    "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\Middlewares\\Third_Party\\FreeRTOS\\Source",
+    "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\Middlewares\\Third_Party\\FreeRTOS\\Source\\portable\\MemMang"
   ],
   "C_Cpp_Runner.includeSearch": [
     "*",
@@ -77,5 +77,10 @@
   "C_Cpp_Runner.useLeakSanitizer": false,
   "C_Cpp_Runner.showCompilationTime": false,
   "C_Cpp_Runner.useLinkTimeOptimization": false,
-  "C_Cpp_Runner.msvcSecureNoWarnings": false
+  "C_Cpp_Runner.msvcSecureNoWarnings": false,
+  "files.associations": {
+    "string": "c",
+    "array": "c",
+    "string_view": "c"
+  }
 }

@@ -25,6 +25,43 @@
 #define INS_Task_H
 #include "struct_typedef.h"
 
+typedef struct {
+    float yaw;
+    float pitch;
+    float roll;
+    float serial_Yaw;
+	float serial_Pitch;
+	float serial_Roll;
+    float circle_yaw;
+	float circle_pitch;
+	float circle_roll;
+} s_AHRS_DATA_t;  //用于计算欧拉角连续化的结构体
+
+typedef struct {
+	struct {
+    float yawAng;
+		float yawAngV;
+    //uint8_t bit[4];
+  } yaw;
+    
+	struct {
+		float pitAng;
+    float pitAngV;
+    //uint8_t bit[2];
+  } pit;
+    
+	struct {
+		float rollAng;
+    float rollAngV;
+    //uint8_t bit[2];
+  } roll;
+	struct {
+		float x;
+    float y;
+    float z;
+  } accel;
+	float temp;
+}s_IMU_all_Value;
 
 #define SPI_DMA_GYRO_LENGHT       8
 #define SPI_DMA_ACCEL_LENGHT      9
@@ -74,6 +111,8 @@
 
 
 
+void AHRSgetAngle(s_AHRS_DATA_t* finalData ,fp32 qq[3] );
+void IMU_receive_all_Value(s_IMU_all_Value*all_value , s_AHRS_DATA_t*IMU_ang , float gyro0[3] , float accel0[3], float *temperate0);
 
 /**
   * @brief          imu task, init bmi088, ist8310, calculate the euler angle

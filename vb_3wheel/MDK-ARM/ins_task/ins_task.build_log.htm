@@ -22,19 +22,27 @@ Dialog DLL:      TCM.DLL V1.32.0.0
  
 <h2>Project:</h2>
 d:\cubeMX f\volleyball_3wheel\vb_3wheel\MDK-ARM\ins_task.uvprojx
-Project File Date:  11/03/2024
+Project File Date:  11/23/2024
 
 <h2>Output:</h2>
 *** Using Compiler 'V5.06 update 5 (build 528)', folder: 'D:\D P J\ARM\ARMCC\Bin'
 Build target 'ins_task'
+compiling bsp_buzzer.c...
+compiling main.c...
 compiling chassis.c...
-..\application\chassis.c(306): warning:  #177-D: variable "delat_angle"  was declared but never referenced
+..\application\chassis.c(144): warning:  #174-D: expression has no effect
+              chassis_control->control_mode_everone == ARTIFICAL_CHASSIS;
+..\application\chassis.c(148): warning:  #174-D: expression has no effect
+              chassis_control->control_mode_everone == ARTIFICAL_BAT;
+..\application\chassis.c(152): warning:  #174-D: expression has no effect
+              chassis_control->control_mode_everone == ARTIFICAL_STRIKER;
+..\application\chassis.c(323): warning:  #177-D: variable "delat_angle"  was declared but never referenced
           fp32 delat_angle = 0.0f;
-..\application\chassis.c: 1 warning, 0 errors
+..\application\chassis.c: 4 warnings, 0 errors
 linking...
-Program Size: Code=54172 RO-data=760 RW-data=456 ZI-data=45672  
+Program Size: Code=73692 RO-data=1780 RW-data=512 ZI-data=47264  
 FromELF: creating hex file...
-"ins_task\ins_task.axf" - 0 Error(s), 1 Warning(s).
+"ins_task\ins_task.axf" - 0 Error(s), 4 Warning(s).
 
 <h2>Software Packages used:</h2>
 
@@ -57,7 +65,7 @@ Package Vendor: Keil
 <h2>Collection of Component Files used:</h2>
 
    * Component: ARM::CMSIS:CORE:5.0.1
-Build Time Elapsed:  00:00:03
+Build Time Elapsed:  00:00:04
 </pre>
 </body>
 </html>
