@@ -6,6 +6,7 @@
 #include "pid.h"
 #include "remote_control.h"
 #include "user_lib.h"
+#include "Monitor_task.h"
 
 #define PI 3.141592653824f
 
@@ -142,27 +143,14 @@ typedef struct
 
 } chassis_motor_t;
 
-typedef enum
-{
-    MODE_ARTIFICAL,
-    MODE_AUTO,
-    MODE_STOP,
-    
-    ARTIFICAL_CHASSIS,
-    ARTIFICAL_BAT,
-    ARTIFICAL_STRIKER,
-
-} control_mode_t;
 
 typedef struct
 {
     const RC_ctrl_t *chassis_RC;      // 底盘使用的遥控器指针, the point to remote control
     const fp32 *chassis_INS_angle;    // the point to the euler angle of gyro sensor.获取陀螺仪解算出的欧拉角指针
     chassis_motor_t chassis_motor;    // chassis motor data.底盘电机数据
-    control_mode_t chassis_mode;      // chassis mode.底盘模式
-    control_mode_t chassis_mode_last; // chassis mode set.底盘的上一次模式
 
-    control_mode_t control_mode_everone;      // control mode.控制模式细分
+    const s_robo_Mode_Setting *robot_StateMode;
 
     s_pid_absolute_t chassis_pid_angle;   //底盘角度pid
 

@@ -645,6 +645,11 @@
               <FileType>1</FileType>
               <FilePath>..\application\bat_control.c</FilePath>
             </File>
+            <File>
+              <FileName>Monitor_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\application\Monitor_task.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

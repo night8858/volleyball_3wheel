@@ -10,7 +10,7 @@
 #include "math.h"
 #include "INS_task.h"
 #include "Variables.h"
-
+#include "Monitor_task.h"
 
 #include "cmsis_os.h"
 #include "FreeRTOS.h"
@@ -29,6 +29,30 @@
                  \---3508(2)---/
 
 */
+
+//
+//
+//        < S1 >                                             < S0 >    
+//
+//
+//
+//
+//
+//            
+//            |                                              |
+//            |                                              |
+//            |                                              |
+//            |                                              |
+//   -------------------ch2                        -------------------ch0
+//            |                                              |
+//            |                                              |
+//            |                                              |
+//            |                                              |
+//           ch3                                            ch1
+//
+
+
+
 #define gen_3 1.73205f
 #define RofCenter 0.4067f // 轮子中心距
 
@@ -36,6 +60,7 @@ extern RC_ctrl_t rc_ctrl;
 extern UART_HandleTypeDef huart1;
 extern motor_measure_t motor_Date[8];
 extern s_IMU_all_Value IMU_All_Value; // 储存imu数据结构体
+extern s_robo_Mode_Setting robot_StateMode; // 储存机器人当前模式
 
 chassis_control_t motor_control;
 s_pid_absolute_t M3508_speed_pid;
@@ -63,19 +88,19 @@ static void chassis_mode_switch(chassis_control_t *chassis_mode_change);
 // static void M6020_motor_relative_angle_control(motor_6020_t *gimbal_motor);
 // static void motor_feedback_update(chassis_control_t *feedback_update);
 // static void M6020_PID_clear(M6020_PID_t *M6020_pid_clear);
+
 //  主线程
 void chassis_task(void const *argument)
 {
     vTaskDelay(5000);
 
     motor_init(&motor_control);
-    Di_Di();
+
     while (1)
     {
         // uart_dma_printf(&huart1,"%4.3f ,%1.1f ,%4.3f\n",
         // rc_ctrl.rc.ch[0], rc_ctrl.rc.ch[1], rc_ctrl.rc.ch[2]);
         // 选择进入控制模式
-        chassis_mode_set(&motor_control);
 
         chassis_feedback_update(&motor_control);
 
@@ -106,6 +131,10 @@ static void motor_init(chassis_control_t *init)
 
     // 遥控器数据指针获取
     init->chassis_RC = get_remote_control_point();
+
+    // 机器人状态模式数据获取
+    init->robot_StateMode = get_robot_mode_pint();
+
     // 陀螺仪数据获取
     init->chassis_INS_angle = get_INS_angle_point();
 
@@ -126,70 +155,10 @@ static void motor_init(chassis_control_t *init)
 }
 
 
-// 底盘运动模式设定
-static void chassis_mode_set(chassis_control_t *chassis_control)
-{
-    if (chassis_control == NULL)
-    {
-        return;
-    }
-
-    // 手动模式
-    if (chassis_control->chassis_RC->rc.s[0] == 1)
-    {
-        chassis_control->chassis_mode = MODE_ARTIFICAL;
-
-        if (chassis_control->chassis_RC->rc.s[1] == 1)
-        {
-            chassis_control->control_mode_everone == ARTIFICAL_CHASSIS;
-        }
-        if (chassis_control->chassis_RC->rc.s[1] == 2)
-        {
-            chassis_control->control_mode_everone == ARTIFICAL_BAT;
-        }
-        if (chassis_control->chassis_RC->rc.s[1] == 0)
-        {
-            chassis_control->control_mode_everone == ARTIFICAL_STRIKER;
-        }
-    }
-
-    else if (chassis_control->chassis_RC->rc.s[0] == 2)
-    {
-        chassis_control->chassis_mode = MODE_AUTO;
-    }
-    else if (chassis_control->chassis_RC->rc.s[0] == 3)
-    {
-        chassis_control->chassis_mode = MODE_STOP;
-    }
-}
-
 // 底盘模式更变数据处理
 static void chassis_mode_switch(chassis_control_t *chassis_mode_change)
 {
-    // 无输入，退出函数
-    if (chassis_mode_change == NULL)
-    {
-        return;
-    }
-    // 模式无变更，退出函数
-    if (chassis_mode_change->chassis_mode == chassis_mode_change->chassis_mode_last)
-    {
-        return;
-    }
 
-    // 手动转自动处理
-    if (chassis_mode_change->chassis_mode_last == MODE_ARTIFICAL && chassis_mode_change->chassis_mode == MODE_AUTO)
-    {
-        /* code */
-    }
-
-    // 自动转手动处理
-    if (chassis_mode_change->chassis_mode_last == MODE_AUTO && chassis_mode_change->chassis_mode == MODE_ARTIFICAL)
-    {
-        /* code */
-    }
-
-    chassis_mode_change->chassis_mode_last = chassis_mode_change->chassis_mode;
 }
 
 // 3508的pid计算
@@ -248,8 +217,8 @@ static void rc_to_motor_set(chassis_control_t *motor_control)
         return;
     }
 
-    // 手动模式的遥控器赋值
-    if (motor_control->chassis_mode == MODE_ARTIFICAL)
+    // 手动模式的底盘操作
+    if (robot_StateMode.roboMode == 3)
     {
 
         motor_control->chassis_vx_ch = 0.0f;
@@ -291,7 +260,7 @@ static void chassis_movement_calc(chassis_control_t *chassis_control)
     fp32 angle_set = 0.0f;
     float motor_speed_calc[motor_3505_num] = {0.0f, 0.0f, 0.0f};
 
-    if (chassis_control->chassis_mode == MODE_ARTIFICAL)
+    if (robot_StateMode.roboMode == 3)
     {
 
         fp32 delat_angle = 0.0f;
@@ -317,7 +286,7 @@ static void chassis_movement_calc(chassis_control_t *chassis_control)
         }
     }
 
-    if (chassis_control->chassis_mode == MODE_STOP)
+    if (robot_StateMode.roboMode == 0)
     {
         chassis_control->chassis_yaw_set = rad_format(angle_set);
         fp32 delat_angle = 0.0f;

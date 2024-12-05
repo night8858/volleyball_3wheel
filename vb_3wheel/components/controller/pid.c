@@ -1,11 +1,11 @@
 /**
   ****************************(C) COPYRIGHT 2019 DJI****************************
   * @file       pid.c/h
-  * @brief      pid瀹為敓琛楃尨鎷烽敓鏂ゆ嫹閿熸枻鎷烽敓鏂ゆ嫹閿熸枻鎷烽敓鏂ゆ嫹濮嬮敓鏂ゆ嫹閿熸枻鎷稰ID閿熸枻鎷烽敓濮愬嚱閿熸枻鎷烽敓鏂ゆ嫹
+  * @brief      pid鐎圭偤鏁撶悰妤冨皑閹风兘鏁撻弬銈嗗闁跨喐鏋婚幏鐑芥晸閺傘倖瀚归柨鐔告灮閹风兘鏁撻弬銈嗗婵鏁撻弬銈嗗闁跨喐鏋婚幏绋癐D闁跨喐鏋婚幏鐑芥晸婵劕鍤遍柨鐔告灮閹风兘鏁撻弬銈嗗
   * @note       
   * @history
   *  Version    Date            Author          Modification
-  *  V1.0.0     Dec-26-2018     RM              1. 閿熸枻鎷烽敓锟�
+  *  V1.0.0     Dec-26-2018     RM              1. 闁跨喐鏋婚幏鐑芥晸閿燂拷
   *
   @verbatim
   ==============================================================================
@@ -42,12 +42,12 @@
   */
 /**
   * @brief          pid struct data init
-  * @param[out]     pid: PID閿熺粨鏋勯敓鏂ゆ嫹閿熸枻鎷锋寚閿熸枻鎷�
-  * @param[in]      mode: PID_POSITION:閿熸枻鎷烽€歅ID
-  *                 PID_DELTA: 閿熸枻鎷烽敓绲嘔D
+  * @param[out]     pid: PID闁跨喓绮ㄩ弸鍕晸閺傘倖瀚归柨鐔告灮閹烽攱瀵氶柨鐔告灮閹凤拷
+  * @param[in]      mode: PID_POSITION:闁跨喐鏋婚幏鐑解偓姝匢D
+  *                 PID_DELTA: 闁跨喐鏋婚幏鐑芥晸缁插様D
   * @param[in]      PID: 0: kp, 1: ki, 2:kd
-  * @param[in]      max_out: pid閿熸枻鎷烽敓鏂ゆ嫹閿熸枻鎷�
-  * @param[in]      max_iout: pid閿熸枻鎷烽敓鏂ゆ嫹閿熸枻鎷烽敓鏂ゆ嫹閿燂拷
+  * @param[in]      max_out: pid闁跨喐鏋婚幏鐑芥晸閺傘倖瀚归柨鐔告灮閹凤拷
+  * @param[in]      max_iout: pid闁跨喐鏋婚幏鐑芥晸閺傘倖瀚归柨鐔告灮閹风兘鏁撻弬銈嗗闁跨噦鎷�
   * @retval         none
   */
 void PID_init(pid_type_def *pid, uint8_t mode, const fp32 PID[3], fp32 max_out, fp32 max_iout)
@@ -74,11 +74,11 @@ void PID_init(pid_type_def *pid, uint8_t mode, const fp32 PID[3], fp32 max_out, 
   * @retval         pid out
   */
 /**
-  * @brief          pid閿熸枻鎷烽敓鏂ゆ嫹
-  * @param[out]     pid: PID閿熺粨鏋勯敓鏂ゆ嫹閿熸枻鎷锋寚閿熸枻鎷�
-  * @param[in]      ref: 閿熸枻鎷烽敓鏂ゆ嫹閿熸枻鎷烽敓鏂ゆ嫹
-  * @param[in]      set: 閿熷€熷畾鍊�
-  * @retval         pid閿熸枻鎷烽敓锟�
+  * @brief          pid闁跨喐鏋婚幏鐑芥晸閺傘倖瀚�
+  * @param[out]     pid: PID闁跨喓绮ㄩ弸鍕晸閺傘倖瀚归柨鐔告灮閹烽攱瀵氶柨鐔告灮閹凤拷
+  * @param[in]      ref: 闁跨喐鏋婚幏鐑芥晸閺傘倖瀚归柨鐔告灮閹风兘鏁撻弬銈嗗
+  * @param[in]      set: 闁跨喎鈧喎鐣鹃崐锟�
+  * @retval         pid闁跨喐鏋婚幏鐑芥晸閿燂拷
   */
 fp32 PID_calc(pid_type_def *pid, fp32 ref, fp32 set)
 {
@@ -124,8 +124,8 @@ fp32 PID_calc(pid_type_def *pid, fp32 ref, fp32 set)
   * @retval         none
   */
 /**
-  * @brief          pid 閿熸枻鎷烽敓鏂ゆ嫹閿熸枻鎷�
-  * @param[out]     pid: PID閿熺粨鏋勯敓鏂ゆ嫹閿熸枻鎷锋寚閿熸枻鎷�
+  * @brief          pid 闁跨喐鏋婚幏鐑芥晸閺傘倖瀚归柨鐔告灮閹凤拷
+  * @param[out]     pid: PID闁跨喓绮ㄩ弸鍕晸閺傘倖瀚归柨鐔告灮閹烽攱瀵氶柨鐔告灮閹凤拷
   * @retval         none
   */
 void PID_clear(pid_type_def *pid)
@@ -143,7 +143,7 @@ void PID_clear(pid_type_def *pid)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-/*********************澧為噺寮廝ID鎺у埗***********************/
+/*********************婢х偤鍣哄寤滻D閹貉冨煑***********************/
 void PID_IncrementMode(s_pid_increase_t *pid)
 {
 	 if(pid->kp<0) pid->kp=-pid->kp;
@@ -173,63 +173,63 @@ void PID_IncrementMode(s_pid_increase_t *pid)
    
 	 pid->ctrOut=-pid->OutMAX; 
 }
-/********************缁濆寮廝ID鎺у埗**************************/
+/********************缂佹繂顕寤滻D閹貉冨煑**************************/
 
 /**
- * @brief 缁濆寮廝ID璁＄畻
+ * @brief 缂佹繂顕寤滻D鐠侊紕鐣�
  * @param s_pid_absolute_t *pid
  * @return float PIDout
  */
 void PID_AbsoluteMode(s_pid_absolute_t *pid)
 {
-    //PID鍚勭幆鑺傚亸宸�
-	pid->Perror = pid->NowError;                  //P鐜妭鍋忓樊鏄綋鍓嶅亸宸�
-	pid->Ierror += pid->NowError;                 //I鐜妭鍋忓樊鏄笂鐢靛悗涓€鐩存寔缁埌鐜板湪鐨勫亸宸�
-	pid->Derror = pid->NowError - pid->LastError; //D鐜妭鍋忓樊鏄綋鍓嶅亸宸笌涓婃鍋忓樊鐨勫樊鍊硷紝鍗冲亸宸閲�
-	pid->LastError = pid->NowError;               //鏇存柊鍋忓樊	
-	//闄愬埗绉垎鍘嗗彶鍋忓樊
+    //PID閸氬嫮骞嗛懞鍌氫焊瀹革拷
+	pid->Perror = pid->NowError;                  //P閻滎垵濡崑蹇撴▕閺勵垰缍嬮崜宥呬焊瀹革拷
+	pid->Ierror += pid->NowError;                 //I閻滎垵濡崑蹇撴▕閺勵垯绗傞悽闈涙倵娑撯偓閻╁瓨瀵旂紒顓炲煂閻滄澘婀惃鍕焊瀹革拷
+	pid->Derror = pid->NowError - pid->LastError; //D閻滎垵濡崑蹇撴▕閺勵垰缍嬮崜宥呬焊瀹割喕绗屾稉濠冾偧閸嬪繐妯婇惃鍕▕閸婄》绱濋崡鍐蹭焊瀹割喖顤冮柌锟�
+	pid->LastError = pid->NowError;               //閺囧瓨鏌婇崑蹇撴▕	
+	//闂勬劕鍩楃粔顖氬瀻閸樺棗褰堕崑蹇撴▕
 	if( pid->Ierror >= pid->IerrorLim) pid->Ierror =  pid->IerrorLim;
 	else if( pid->Ierror <= -pid->IerrorLim)  pid->Ierror =  -pid->IerrorLim;
-	//PID鍚勭幆鑺傝緭鍑洪噺
+	//PID閸氬嫮骞嗛懞鍌濈翻閸戞椽鍣�
 	pid->Pout = pid->Kp * pid->Perror;
 	pid->Iout = pid->Ki * pid->Ierror;
 	pid->Dout = pid->Kd * pid->Derror;
-	//PID鎬昏緭鍑洪噺
+	//PID閹槒绶崙娲櫤
 	pid->PIDout = pid->Pout + pid->Iout + pid->Dout;
-	//闄愬埗PID鎬昏緭鍑洪噺
+	//闂勬劕鍩桺ID閹槒绶崙娲櫤
 	if(pid->PIDout > pid->PIDoutMAX) pid->PIDout = pid->PIDoutMAX;
 	else if(pid->PIDout < -pid->PIDoutMAX) pid->PIDout = -pid->PIDoutMAX;
 }
 /**
- * @brief 缁濆寮廝ID璁＄畻(绉垎鍒嗙)
+ * @brief 缂佹繂顕寤滻D鐠侊紕鐣�(缁夘垰鍨庨崚鍡欘瀲)
  * @param s_pid_absolute_t *pid
  * @param float integral_apart_val
  * @return float PIDout
  */
 void PID_AbsoluteMode_integral_apart(s_pid_absolute_t *pid,float integral_apart_val)
 {
-    //PID鍚勭幆鑺傚亸宸�
-	pid->Perror = pid->NowError;                  //P鐜妭鍋忓樊鏄綋鍓嶅亸宸�
+    //PID閸氬嫮骞嗛懞鍌氫焊瀹革拷
+	pid->Perror = pid->NowError;                  //P閻滎垵濡崑蹇撴▕閺勵垰缍嬮崜宥呬焊瀹革拷
     if(fabs(pid->NowError)<integral_apart_val)
-	    pid->Ierror += pid->NowError;                 //I鐜妭鍋忓樊鏄笂鐢靛悗涓€鐩存寔缁埌鐜板湪鐨勫亸宸�
+	    pid->Ierror += pid->NowError;                 //I閻滎垵濡崑蹇撴▕閺勵垯绗傞悽闈涙倵娑撯偓閻╁瓨瀵旂紒顓炲煂閻滄澘婀惃鍕焊瀹革拷
     else pid->Ierror = 0;
-	pid->Derror = pid->NowError - pid->LastError; //D鐜妭鍋忓樊鏄綋鍓嶅亸宸笌涓婃鍋忓樊鐨勫樊鍊硷紝鍗冲亸宸閲�
-	pid->LastError = pid->NowError;               //鏇存柊鍋忓樊
-	//闄愬埗绉垎鍘嗗彶鍋忓樊
+	pid->Derror = pid->NowError - pid->LastError; //D閻滎垵濡崑蹇撴▕閺勵垰缍嬮崜宥呬焊瀹割喕绗屾稉濠冾偧閸嬪繐妯婇惃鍕▕閸婄》绱濋崡鍐蹭焊瀹割喖顤冮柌锟�
+	pid->LastError = pid->NowError;               //閺囧瓨鏌婇崑蹇撴▕
+	//闂勬劕鍩楃粔顖氬瀻閸樺棗褰堕崑蹇撴▕
 	if( pid->Ierror >= pid->IerrorLim) pid->Ierror =  pid->IerrorLim;
 	else if( pid->Ierror <= -pid->IerrorLim)  pid->Ierror =  -pid->IerrorLim;
-	//PID鍚勭幆鑺傝緭鍑洪噺
+	//PID閸氬嫮骞嗛懞鍌濈翻閸戞椽鍣�
 	pid->Pout = pid->Kp * pid->Perror;
 	pid->Iout = pid->Ki * pid->Ierror;
 	pid->Dout = pid->Kd * pid->Derror;
-	//PID鎬昏緭鍑洪噺
+	//PID閹槒绶崙娲櫤
 	pid->PIDout = pid->Pout + pid->Iout + pid->Dout;
-	//闄愬埗PID鎬昏緭鍑洪噺
+	//闂勬劕鍩桺ID閹槒绶崙娲櫤
 	if(pid->PIDout > pid->PIDoutMAX) pid->PIDout = pid->PIDoutMAX;
 	else if(pid->PIDout < -pid->PIDoutMAX) pid->PIDout = -pid->PIDoutMAX;
 }
 /**
- * @brief   PID鍙傛暟鍒濆鍖栵紝鍙互鏀惧湪鍒濆鍖栧嚱鏁颁腑锛屼篃鍙互鏀惧湪寰幆閲�
+ * @brief   PID閸欏倹鏆熼崚婵嗩潗閸栨牭绱濋崣顖欎簰閺€鎯ф躬閸掓繂顫愰崠鏍у毐閺侀鑵戦敍灞肩瘍閸欘垯浜掗弨鎯ф躬瀵邦亞骞嗛柌锟�
  * @param 	PID_AbsoluteType *pid
  * @param   float kp
  * @param   float ki
@@ -248,7 +248,7 @@ void pid_abs_param_init(s_pid_absolute_t *pid, float kp, float ki, float kd, flo
 	pid->PIDoutMAX = MaxOutCur;
 }
 /**
- * @brief   PID鍙傛暟璧嬪€硷紝鍙互鏀惧湪鍒濆鍖栧嚱鏁颁腑锛屼篃鍙互鏀惧湪寰幆閲岋紝鎴戠敤鏉ユ斁鍒板惊鐜噷璋冭瘯鍙傛暟
+ * @brief   PID閸欏倹鏆熺挧瀣偓纭风礉閸欘垯浜掗弨鎯ф躬閸掓繂顫愰崠鏍у毐閺侀鑵戦敍灞肩瘍閸欘垯浜掗弨鎯ф躬瀵邦亞骞嗛柌宀嬬礉閹存垹鏁ら弶銉︽杹閸掓澘鎯婇悳顖炲櫡鐠嬪啳鐦崣鍌涙殶
  * @param 	PID_AbsoluteType *pid
  * @param   float kp
  * @param   float ki
@@ -267,7 +267,7 @@ void pid_abs_evaluation(s_pid_absolute_t *pid, float kp, float ki, float kd, flo
 }
 
 /**
- * @brief   鍗曠幆PID
+ * @brief   閸楁洜骞哖ID
  * @param 	s_pid_absolute_t *single_pid
  * @param   float get
  * @param   float targeti		
@@ -284,7 +284,7 @@ int16_t motor_single_loop_PID(s_pid_absolute_t *single_pid , float target , floa
 	return pid_output;
 }
 /**
- * @brief   涓茬骇PID
+ * @brief   娑撹尙楠嘝ID
  * @param 	s_pid_absolute_t *pos_pid
  * @param   s_pid_absolute_t *spd_pid
  * @param   float externGet
@@ -309,7 +309,7 @@ float motor_double_loop_PID(s_pid_absolute_t *pos_pid, s_pid_absolute_t *spd_pid
 	return pid_output;
 }
 /**
- * @brief 涓茬骇PID(閫熷害鐜Н鍒嗗垎绂�)
+ * @brief 娑撹尙楠嘝ID(闁喎瀹抽悳顖溞濋崚鍡楀瀻缁傦拷)
  * @param s_pid_absolute_t *pos_pid
  * @param s_pid_absolute_t *spd_pid
  * @param float externGet

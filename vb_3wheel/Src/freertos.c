@@ -57,6 +57,7 @@ osThreadId testHandle;
 osThreadId LEDTaskHandle;
 osThreadId INSTaskHandle;
 osThreadId ChassisTaskHandle;
+osThreadId Monitor_TaskHandle;
 osThreadId functional_zoneHandle;
 
 /* Private function prototypes -----------------------------------------------*/
@@ -68,6 +69,7 @@ void test_task(void const * argument);
 void led_RGB_flow_task(void const * argument);
 void INS_task(void const * argument);
 void chassis_task(void const * argument);
+void Monitor_task(void const * argument);
 void functional_zone_task(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -147,8 +149,12 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(ChassisTask, chassis_task, osPriorityAboveNormal, 0, 512);
   ChassisTaskHandle = osThreadCreate(osThread(ChassisTask), NULL);
 
+  /* definition and creation of Monitor_Task */
+  osThreadDef(Monitor_Task, Monitor_task, osPriorityAboveNormal, 0, 128);
+  Monitor_TaskHandle = osThreadCreate(osThread(Monitor_Task), NULL);
+
   /* definition and creation of functional_zone */
-  osThreadDef(functional_zone, functional_zone_task, osPriorityNormal, 0, 512);
+  osThreadDef(functional_zone, functional_zone_task, osPriorityAboveNormal, 0, 512);
   functional_zoneHandle = osThreadCreate(osThread(functional_zone), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -232,6 +238,24 @@ __weak void chassis_task(void const * argument)
     osDelay(1);
   }
   /* USER CODE END chassis_task */
+}
+
+/* USER CODE BEGIN Header_Monitor_task */
+/**
+* @brief Function implementing the Monitor_Task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Monitor_task */
+__weak void Monitor_task(void const * argument)
+{
+  /* USER CODE BEGIN Monitor_task */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END Monitor_task */
 }
 
 /* USER CODE BEGIN Header_functional_zone_task */

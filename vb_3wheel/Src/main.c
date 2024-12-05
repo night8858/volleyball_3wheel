@@ -112,7 +112,7 @@ int main(void)
   MX_USART3_UART_Init();
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
-    //鍩虹鍒濆�???
+    //閸╄櫣顢呴崚婵嗩潗锟�????
     delay_init();
     can_filter_init();
     remote_control_init();

@@ -81,6 +81,8 @@
   "files.associations": {
     "string": "c",
     "array": "c",
-    "string_view": "c"
+    "string_view": "c",
+    "cmsis_os.h": "c",
+    "freertos.h": "c"
   }
 }

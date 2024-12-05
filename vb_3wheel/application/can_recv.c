@@ -11,8 +11,11 @@ extern CAN_HandleTypeDef hcan2;
 extern RC_ctrl_t rc_ctrl;
 
 motor_measure_t motor_Date[8];      // RM电机回传数据结构体
-DM4340_motor_data_t DM4340_Date[3]; // DM4340回传数据结构体
-ht_motor_data_t HT04_Data;
+
+extern s_motor_data_t DM4340_Date[3]; // DM4340回传数据结构体
+extern s_motor_data_t DM8006_Date[1]; // DM4340回传数据结构体
+extern s_motor_data_t HT04_Data;
+
 int DM_circle_num[4];
 
 static CAN_TxHeaderTypeDef RM6020_tx_message; // can_6020发送邮箱
@@ -214,7 +217,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
             HT04_CanReceive(&HT04_Data, rx_data_can1);
 
             HT04_Data.esc_back_position_last = HT04_Data.esc_back_position;
-            DM4340_Date[2].real_angle = DM4340_Date[2].esc_back_position * RAD2ROUND;
+            //DM4340_Date[2].real_angle = DM4340_Date[2].esc_back_position * RAD2ROUND;
             break;
         }
         default:
@@ -240,7 +243,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
             MD_CanReceive(&DM4340_Date[0], rx_data_can2);
 
             DM4340_Date[0].esc_back_position_last = DM4340_Date[0].esc_back_position;
-            DM4340_Date[0].real_angle = DM4340_Date[0].esc_back_position / PI * 180; // RUD_DirAngle_Proc(DM4340_Date[0].serial_angle);
+            DM4340_Date[0].real_angle = DM4340_Date[0].esc_back_position * 57.29577951308f; // RUD_DirAngle_Proc(DM4340_Date[0].serial_angle);
 
             break;
         }
@@ -250,7 +253,8 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
             MD_CanReceive(&DM4340_Date[1], rx_data_can2);
 
             DM4340_Date[1].esc_back_position_last = DM4340_Date[1].esc_back_position;
-            DM4340_Date[1].real_angle = DM4340_Date[1].esc_back_position / PI * 180;
+            DM4340_Date[1].real_angle = DM4340_Date[1].esc_back_position * 57.29577951308f
+            ;
             break;
         }
         case DM4340_M3:
@@ -259,7 +263,16 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
             MD_CanReceive(&DM4340_Date[2], rx_data_can2);
 
             DM4340_Date[2].esc_back_position_last = DM4340_Date[2].esc_back_position;
-            DM4340_Date[2].real_angle = DM4340_Date[2].esc_back_position / PI * 180;
+            DM4340_Date[2].real_angle = DM4340_Date[2].esc_back_position * 57.29577951308f;
+            break;
+        }
+        case DM8006_M1:
+        {
+            DM8006_Date[0].id = (rx_data_can2[0]) & 0x0F;
+            
+            MD_CanReceive(&DM8006_Date[0], rx_data_can2);
+            DM8006_Date[0].esc_back_position_last = DM8006_Date[0].esc_back_position;
+            DM8006_Date[0].real_angle = DM8006_Date[0].esc_back_position * 57.29577951308f;
             break;
         }
 
@@ -281,7 +294,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     }
 
     // 达妙电机的数据解包和赋值
-    void MD_CanReceive(DM4340_motor_data_t * motor, uint8_t RxDate[8])
+    void MD_CanReceive(s_motor_data_t * motor, uint8_t RxDate[8])
     {
 
         int p_int = (RxDate[1] << 8) | RxDate[2];
@@ -318,15 +331,15 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
         if (motor->id == 0x04)
         {
             motor->state = (RxDate[0]) >> 4;
-            motor->esc_back_position = uint_to_float(p_int, DM4340_P_MIN, DM4340_P_MAX, 16); // 电机位置
-            motor->esc_back_speed = uint_to_float(v_int, DM4340_V_MIN, DM4340_V_MAX, 12);    // 电机速度
-            motor->esc_back_current = uint_to_float(i_int, DM4340_T_MIN, DM4340_T_MAX, 12);  //	电机扭矩/电流
+            motor->esc_back_position = uint_to_float(p_int, DM8006_P_MIN, DM8006_P_MAX, 16); // 电机位置
+            motor->esc_back_speed = uint_to_float(v_int, DM8006_V_MIN, DM8006_V_MAX, 12);    // 电机速度
+            motor->esc_back_current = uint_to_float(i_int, DM8006_T_MIN, DM8006_T_MIN, 12);  //	电机扭矩/电流
             motor->Tmos = (float)(RxDate[6]);
             motor->Tcoil = (float)(RxDate[7]);
         }
     }
 
-    void HT04_CanReceive(ht_motor_data_t * motor, uint8_t *RxData)
+    void HT04_CanReceive(s_motor_data_t * motor, uint8_t *RxData)
     {
         int p_int = (RxData[1] << 8) | RxData[2];
         int v_int = (RxData[3] << 4) | (RxData[4] >> 4);

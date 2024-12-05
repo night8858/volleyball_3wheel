@@ -5,9 +5,11 @@
 #include "bsp_can.h"
 #include "chassis.h"
 #include "pid.h"
+#include "Monitor_task.h"
 
 #define PI 3.141592653824f //圆周率
 
+#define WIGTH_of_BAT 3.4f //球拍重量(kg)
 #define R1 89.0236f
 #define L1 150.0f         //连杆1，mm
 #define La 150.0f         //连杆2
@@ -23,11 +25,23 @@
 #define DM4340_ANGLE_PID_MAX_IOUT 5000.0f //  
 #define DM4340_ANGLE_PID_MAX_OUT 8000.0f //  
 
-#define DM4340_SPEED_PID_KP   3.2f    //
+#define DM4340_SPEED_PID_KP   2.6f    //
 #define DM4340_SPEED_PID_KI   0.0f    //
 #define DM4340_SPEED_PID_KD   0.0f
 #define DM4340_SPEED_PID_MAX_IOUT 5000.0f //  
 #define DM4340_SPEED_PID_MAX_OUT 8000.0f // 
+
+#define DM8006_ANGLE_PID_KP   0.26f    //
+#define DM8006_ANGLE_PID_KI   0.0f    //
+#define DM8006_ANGLE_PID_KD   0.6f
+#define DM8006_ANGLE_PID_MAX_IOUT 5000.0f //  
+#define DM8006_ANGLE_PID_MAX_OUT 8000.0f //  
+
+#define DM8006_SPEED_PID_KP   1.0f    //
+#define DM8006_SPEED_PID_KI   0.0f    //
+#define DM8006_SPEED_PID_KD   0.0f
+#define DM8006_SPEED_PID_MAX_IOUT 5000.0f //  
+#define DM8006_SPEED_PID_MAX_OUT 20.0f // 
 
 #define HT04_ANGLE_PID_KP   5.0f    //
 #define HT04_ANGLE_PID_KI   0.0f    //
@@ -95,14 +109,34 @@ typedef struct
 	
 }top_inverse_calculation_angle;
 
+typedef enum
+{
+    STRIKER_is_READY = 0,
+    STRIKER_is_RUNNING = 1,
 
+
+}e_striker_flags;
+
+typedef enum
+{
+    BAT_is_READY = 0,    //球拍准备好接受指令
+    BAT_is_RUNNING = 1,  //球拍正在运行指令
+    BAT_in_zero = 2,     //球拍停止
+
+
+}e_bat_flags;
 
 /*球拍控制部分结构体*/
 typedef struct 
 {
-    const RC_ctrl_t *control_RC;      
+    const RC_ctrl_t *control_RC;
+    const s_robo_Mode_Setting *robot_StateMode;  
+
     s_pid_absolute_t DM_Motor_PID_speed[3];
     s_pid_absolute_t DM_Motor_PID_angle[3];
+
+    s_pid_absolute_t DM_Motor_8006_PID_speed;
+    s_pid_absolute_t DM_Motor_8006_PID_angle;
 
     s_pid_absolute_t HT_Motor_PID_speed;
     s_pid_absolute_t HT_Motor_PID_angle;
@@ -110,14 +144,24 @@ typedef struct
     top_inverse_calculation_angle top_inverse_angle;
     bat_space_pos_t bat_space_pos;
 
+    e_striker_flags bat_flag;
 
+    float pitch_init_angle;
 
     float pid_out[3]; 
 
     float set_x;
     float set_y;
     float set_z;
+    float set_pitch;
 
+    float real_x;
+    float real_y;
+    float real_z;
+    float real_pitch;
+    
+    int striker_flag;
+    float ;
 }bat_control_t;
 
 void functional_zone_task(void const * argument);
