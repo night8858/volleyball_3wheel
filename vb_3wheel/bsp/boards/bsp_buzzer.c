@@ -17,19 +17,3 @@ void buzzer_off(void)
 	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, 0);//设置比较值为0，即高电平为0
 }
 
-//
-void Di_Di(void)
-{
-	static uint16_t count = 0;
-	count ++;
-	if(count > 0 && count < 2 )
-	buzzer_on(1, 50);
-	if(count > 2 && count < 6 )
-	buzzer_off();
-	if(count > 6 && count < 8 )
-	buzzer_on(1, 50);
-	if(count > 8 && count < 68)
-	buzzer_off();
-	else if(count > 68)
-	count = 0;
-}

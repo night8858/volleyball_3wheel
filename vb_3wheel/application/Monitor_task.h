@@ -1,6 +1,7 @@
 #ifndef MONITOR_TASK_H_
 #define MONITOR_TASK_H_
 
+
 typedef struct
 {
 
@@ -29,6 +30,7 @@ typedef struct
     } roboMode; // 机器控制模式
 
 } s_robo_Mode_Setting;
+
 
 extern const s_robo_Mode_Setting *get_robot_mode_pint(void);
 

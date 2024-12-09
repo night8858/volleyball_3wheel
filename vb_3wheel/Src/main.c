@@ -112,13 +112,14 @@ int main(void)
   MX_USART3_UART_Init();
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
-    //閸╄櫣顢呴崚婵嗩潗锟�????
+    //闁糕晞娅ｉ�?�鍛村礆濠靛棭娼楅敓�?????
     delay_init();
     can_filter_init();
     remote_control_init();
 
     HAL_TIM_Base_Start(&htim4);
     HAL_TIM_PWM_Start(&htim4 , TIM_CHANNEL_3);
+    buzzer_off();
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */

@@ -16,8 +16,8 @@
 #define DM4340_KP_MAX 500.0f  // Kp最大值
 #define DM4340_KD_MIN 0.0f    // Kd最小值
 #define DM4340_KD_MAX 5.0f    // Kd最大值
-#define DM4340_T_MIN -28.0f   // 转矩最大值
-#define DM4340_T_MAX 28.0f    // 转矩最小值
+#define DM4340_T_MIN -10.0f   // 转矩最大值
+#define DM4340_T_MAX 10.0f    // 转矩最小值
 
 #define DM8006_P_MIN -12.5f // 位置最小值
 #define DM8006_P_MAX 12.5f  // 位置最大值
@@ -27,8 +27,8 @@
 #define DM8006_KP_MAX 500.0f  // Kp最大值
 #define DM8006_KD_MIN 0.0f    // Kd最小值
 #define DM8006_KD_MAX 5.0f    // Kd最大值
-#define DM8006_T_MIN -20.0f   // 转矩最大值
-#define DM8006_T_MAX 20.0f    // 转矩最小值
+#define DM8006_T_MIN -18.0f   // 转矩最大值
+#define DM8006_T_MAX 18.0f    // 转矩最小值
 
 
 #define HT04_P_MIN   -95.5f
@@ -39,10 +39,9 @@
 #define HT04_KP_MAX   500.0f
 #define HT04_KD_MIN   0.0f
 #define HT04_KD_MAX   5.0f
-#define HT04_T_MIN   -18.0f
-#define HT04_T_MAX   18.0f
-#define HT04_T_MIN_04   -50.0f
-#define HT04_T_MAX_04   50.0f
+#define HT04_T_MIN   -20.0f
+#define HT04_T_MAX   20.0f
+
 
 /* CAN send and receive ID */
 /*所有can消息的ID*/
@@ -92,14 +91,14 @@ typedef enum
 
 typedef struct 
 {
-	int id;
-    int state;
+	int id;                // 帧ID
+    int state;             // 状态
 
-    float f_kp;
-    float f_p;
-    float f_kd;
-    float f_v;
-    float f_t;
+    float f_kp;            // 位置环增益
+    float f_p;            // 位置环偏差
+    float f_kd;            // 速度环增益
+    float f_v;            // 速度环偏差
+    float f_t;            // 转矩
 
     int p_int;
     int v_int;
@@ -120,12 +119,12 @@ typedef struct
     int64_t circle_num;           // 旋转圈数
     float serial_position;        // 总码盘值
     float serial_angle;           // 总角度
-    float serial_angle_last;
-    float real_angle; // 真实角度
+    float serial_angle_last;      // 上一次的总角度
+    float real_angle;         // 真实角度
 
     /*目标值*/
     float target_speed; // 目标速度
-    float set_speed;
+    float set_speed;    // 设置速度
     double target_position; // 目标位置
     float target_angle;     // 目标角度
     int target_state;
@@ -149,6 +148,9 @@ typedef struct
 
 } motor_measure_t;
 
+
+/*RM电机的控制函数*/
+
 void CAN_cmd_6020(int16_t CMD_ID_1, int16_t CMD_ID_2, int16_t CMD_ID_3, int16_t CMD_ID_4);
 void CAN_cmd_3508(int16_t CMD_ID_1, int16_t CMD_ID_2, int16_t CMD_ID_3, int16_t CMD_ID_4);
 
@@ -159,7 +161,12 @@ extern void MD_CanReceive(s_motor_data_t *motor, uint8_t RxDate[8]);
 
 void DM_motor_start(CAN_HandleTypeDef *Target_hcan, uint16_t id);
 
-void MD_motor_SendCurrent(CAN_HandleTypeDef *hcan, uint32_t id, float _torq);
+void MD4340_motor_PID_Control(CAN_HandleTypeDef *hcan, uint32_t id, float _torq);
+
+void DM8006_motor_PID_Control(CAN_HandleTypeDef *hcan, uint32_t id, float _torq);
+
+
+/*海泰电机的控制函数*/
 
 void HT04_motor_start(CAN_HandleTypeDef *Target_hcan, uint8_t id);
 
@@ -167,6 +174,8 @@ void HT04_CanReceive(s_motor_data_t *motor, uint8_t *RxData);
 
 void HT04_motor_PID_Control(CAN_HandleTypeDef *hcan, uint32_t id, float _torq);
 
+
+/*通讯协议的处理函数*/
 float RUD_DirAngle_Proc(float Angle);
 
 int float_to_uint(float x, float x_min, float x_max, unsigned int bits);

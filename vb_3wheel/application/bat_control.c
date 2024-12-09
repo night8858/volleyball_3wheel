@@ -9,16 +9,15 @@
 
 #define DEBUG 1 // 调试开关
 
-
 //
 //
-//        < S1 >                                             < S0 >    
-//
-//
+//        < S1 >                                             < S0 >
 //
 //
 //
-//            
+//
+//
+//
 //            |                                              |
 //            |                                              |
 //            |                                              |
@@ -31,16 +30,14 @@
 //           ch3                                            ch1
 //
 
-
-extern s_motor_data_t DM4340_Date[3]; // DM4340回传数据结构体
-extern s_motor_data_t DM8006_Date[1]; // DM4340回传数据结构体
-extern s_motor_data_t HT04_Data;    // 引用HT04回传数据结构体
+extern s_motor_data_t DM4340_Date[3];       // DM4340回传数据结构体
+extern s_motor_data_t DM8006_Date[1];       // DM4340回传数据结构体
+extern s_motor_data_t HT04_Data;            // 引用HT04回传数据结构体
 extern s_robo_Mode_Setting robot_StateMode; // 引用机器人模式结构体
 
-struct Data Data;
+// struct Data Data;
 
 bat_control_t bat_control;
-Ball_Pos RX_ball_pos;
 first_order_filter_type_t filter_angle;
 top_inverse_calculation_angle inverse_calculation_angle;
 
@@ -50,11 +47,22 @@ int MMPerLinearSegment = 6;
 
 static float limit_bat_pitch(float Value);
 static void bat_pitch_init(void);
+static void bat_motor_Init(bat_control_t *bat_control);
+static void bat_motor_control(bat_control_t *bat_control);
+static void motor_pid_clac(bat_control_t *bat_control);
+static void top_RC_control_set(bat_control_t *bat_control);
+static void bat_data_update(bat_control_t *bat_control);
+static float float_constrain(float Value, float minValue, float maxValue);
+static void delta_arm_inverse_calculation(struct Angle *angle, float x, float y, float z);
+static void Forward_Kinematics(struct Point *Point, float theta1, float theta2, float theta3);
 
+static bool_t auto_hit_ball_loop(bat_control_t *bat_control);
+static float CalDistance2Point(struct Point point1, struct Point point2);
+static struct Point GetPointInLine(struct Point currentP, struct Point desiredP, float t);
 // 球拍控制主循环
-void functional_zone_task(void const * argument)
+void functional_zone_task(void const *argument)
 {
-    vTaskDelay(3000);
+    // vTaskDelay(3000);
     ///////////////初始化函数///////////////
     bat_motor_Init(&bat_control);
     // ball_track_pid_init();
@@ -62,12 +70,12 @@ void functional_zone_task(void const * argument)
 
     while (1)
     {
-        HT04_motor_PID_Control(&hcan1 , 0x50 ,-20.0);
+        // HT04_motor_PID_Control(&hcan1 , 0x50 , 0.0f);
 
         bat_data_update(&bat_control);
         top_RC_control_set(&bat_control);
-        DM_motor_pid_clac(&bat_control);
-        DM_motor_control(&bat_control);
+        motor_pid_clac(&bat_control);
+        bat_motor_control(&bat_control);
         osDelay(1);
         //////////////////调试函数///////////////
         if (DEBUG)
@@ -77,171 +85,204 @@ void functional_zone_task(void const * argument)
                             DM8006_Date[0].target_angle,
                             DM8006_Date[0].esc_back_position,
                             DM8006_Date[0].out_current,
-                            bat_control.pitch_init_angle,
-                            bat_control.robot_StateMode->roboMode);
-                            /*                                                        bat_control.top_inverse_angle.angle[0],
-                            bat_control.top_inverse_angle.angle[1],
-                            bat_control.top_inverse_angle.angle[2]);*/
-
-        } 
-        //Forward_Kinematics(DM4340_Date[0].real_angle, DM4340_Date[1].real_angle,DM4340_Date[2].real_angle);
-        //delta_arm_inverse_calculation(0,0,0, &inverse_calculation_angle);
-        // 电机角度更新
+                            HT04_Data.target_angle,
+                            HT04_Data.real_angle);
+            /*                                                        bat_control.top_inverse_angle.angle[0],
+            bat_control.top_inverse_angle.angle[1],
+            bat_control.top_inverse_angle.angle[2]);*/
+        }
+        // Forward_Kinematics(DM4340_Date[0].real_angle, DM4340_Date[1].real_angle,DM4340_Date[2].real_angle);
+        // delta_arm_inverse_calculation(0,0,0, &inverse_calculation_angle);
+        //  电机角度更新
     }
 }
 
-
 /// @brief 球拍部分初始化
-/// @param bat_control 
+/// @param bat_control
 void bat_motor_Init(bat_control_t *bat_control)
 {
-    //初始化电机
+
+    const static fp32 input_pitch_pos_num[1] = {0.16666666f};
+    const static fp32 input_set_X_num[1] = {0.16666666f};
+    const static fp32 input_set_Y_num[1] = {0.16666666f};
+    const static fp32 input_set_Z_num[1] = {0.16666666f};
+    // 初始化电机
     for (uint8_t i = 0; i < 5; i++)
     {
-        DM_motor_start(&hcan2 , i);
+        DM_motor_start(&hcan2, i); // 启动DM电机
         osDelay(500);
     }
-    
-    HT04_motor_start(&hcan1, HT8115_M1);
-    osDelay(100);
-    //获取当前电机空间坐标
-    Forward_Kinematics(bat_control ,DM4340_Date[0].real_angle, DM4340_Date[1].real_angle,DM4340_Date[2].real_angle);
 
-    //获取遥控器指针
+    HT04_motor_start(&hcan1, HT8115_M1); // 启动HT04电机
+    osDelay(100);
+
+    first_order_filter_init(&bat_control->input_pitch_pos_filter, 0.002f, input_pitch_pos_num);
+    first_order_filter_init(&bat_control->input_set_X_filter, 0.002f, input_set_X_num);
+    first_order_filter_init(&bat_control->input_set_Y_filter, 0.002f, input_set_Y_num);
+    first_order_filter_init(&bat_control->input_set_Z_filter, 0.002f, input_set_Z_num);
+    first_order_filter_init(&bat_control->input_set_striker_filter, 0.002f, input_set_Z_num);
+    // first_order_filter_init(&bat_control->pitch_pos_filter , 0.002f , pitch_pos_filter);
+
+    // 获取当前电机空间坐标
+    Forward_Kinematics(&bat_control->pos_angle_data.CurrentPoint, DM4340_Date[0].real_angle, DM4340_Date[1].real_angle, DM4340_Date[2].real_angle);
+
+    // 获取遥控器指针
     bat_control->control_RC = get_remote_control_point();
     bat_control->robot_StateMode = get_robot_mode_pint();
-    //设定初始目标角度
+    // 设定初始目标角度
     DM4340_Date[0].target_angle = float_constrain(50, 9.367, 54.367);
     DM4340_Date[1].target_angle = float_constrain(50, 8.809, 53.809);
     DM4340_Date[2].target_angle = float_constrain(50, 9.903, 54.903);
 
-    //这里尝试写一个编码器初始值校准函数，针对球拍的pitch电机
+    // 这里尝试写一个编码器初始值校准函数，针对球拍的pitch电机
     bat_pitch_init();
 
     DM8006_Date[0].target_angle = limit_bat_pitch(0.0f + bat_control->pitch_init_angle);
 
+    HT04_Data.target_angle = 0.0f;
+
     /***********初始化双环PID参数***********/
-    for ( int i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++)
     {
-        pid_abs_param_init(&bat_control->DM_Motor_PID_angle[i] ,DM4340_ANGLE_PID_KP , DM4340_ANGLE_PID_KI , DM4340_ANGLE_PID_KD , DM4340_ANGLE_PID_MAX_IOUT , DM4340_ANGLE_PID_MAX_OUT );
-        pid_abs_param_init(&bat_control->DM_Motor_PID_speed[i] ,DM4340_SPEED_PID_KP , DM4340_SPEED_PID_KI , DM4340_SPEED_PID_KD , DM4340_SPEED_PID_MAX_IOUT , DM4340_SPEED_PID_MAX_OUT );
-        
+        pid_abs_param_init(&bat_control->DM_Motor_PID_angle[i], DM4340_ANGLE_PID_KP, DM4340_ANGLE_PID_KI, DM4340_ANGLE_PID_KD, DM4340_ANGLE_PID_MAX_IOUT, DM4340_ANGLE_PID_MAX_OUT);
+        pid_abs_param_init(&bat_control->DM_Motor_PID_speed[i], DM4340_SPEED_PID_KP, DM4340_SPEED_PID_KI, DM4340_SPEED_PID_KD, DM4340_SPEED_PID_MAX_IOUT, DM4340_SPEED_PID_MAX_OUT);
     }
 
-        pid_abs_param_init(&bat_control->DM_Motor_8006_PID_angle ,DM8006_ANGLE_PID_KP , DM8006_ANGLE_PID_KI , DM8006_ANGLE_PID_KD , DM8006_ANGLE_PID_MAX_IOUT , DM8006_ANGLE_PID_MAX_OUT );
-        pid_abs_param_init(&bat_control->DM_Motor_8006_PID_speed ,DM8006_SPEED_PID_KP , DM8006_SPEED_PID_KI , DM8006_SPEED_PID_KD , DM8006_SPEED_PID_MAX_IOUT , DM8006_SPEED_PID_MAX_OUT );
-     
+    pid_abs_param_init(&bat_control->DM_Motor_8006_PID_angle, DM8006_ANGLE_PID_KP, DM8006_ANGLE_PID_KI, DM8006_ANGLE_PID_KD, DM8006_ANGLE_PID_MAX_IOUT, DM8006_ANGLE_PID_MAX_OUT);
+    pid_abs_param_init(&bat_control->DM_Motor_8006_PID_speed, DM8006_SPEED_PID_KP, DM8006_SPEED_PID_KI, DM8006_SPEED_PID_KD, DM8006_SPEED_PID_MAX_IOUT, DM8006_SPEED_PID_MAX_OUT);
 
-        pid_abs_param_init(&bat_control->HT_Motor_PID_angle ,HT04_ANGLE_PID_KP , HT04_ANGLE_PID_KI , HT04_ANGLE_PID_KD , HT04_ANGLE_PID_MAX_IOUT , HT04_ANGLE_PID_MAX_OUT );
-        pid_abs_param_init(&bat_control->HT_Motor_PID_speed ,HT04_SPEED_PID_KP , HT04_SPEED_PID_KI , HT04_SPEED_PID_KD , HT04_SPEED_PID_MAX_IOUT , HT04_SPEED_PID_MAX_OUT );
-        
-    //for (int i = 0; i < 3; i++)
+    pid_abs_param_init(&bat_control->HT_Motor_PID_angle, HT04_ANGLE_PID_KP, HT04_ANGLE_PID_KI, HT04_ANGLE_PID_KD, HT04_ANGLE_PID_MAX_IOUT, HT04_ANGLE_PID_MAX_OUT);
+    pid_abs_param_init(&bat_control->HT_Motor_PID_speed, HT04_SPEED_PID_KP, HT04_SPEED_PID_KI, HT04_SPEED_PID_KD, HT04_SPEED_PID_MAX_IOUT, HT04_SPEED_PID_MAX_OUT);
+
+    // for (int i = 0; i < 3; i++)
     //{
-    //    MD_motor_SendCurrent(&hcan2, i + 1, bat_control->pid_out[i]);
-    //}
+    //     MD_motor_SendCurrent(&hcan2, i + 1, bat_control->pid_out[i]);
+    // }
 }
 
-
-//初始化pitch电机角度
+// 初始化pitch电机角度
 static void bat_pitch_init(void)
 {
     int count = 100;
     // 电机pitch初始位置校准,摁怼1s确定初始值
     while (count--)
     {
-        MD_motor_SendCurrent(&hcan2, 0x04, 0.5f);
-        HAL_Delay(10);
+        DM8006_motor_PID_Control(&hcan2, 0x04, 4.0f);
+        osDelay(10);
     }
-    
+
     bat_control.pitch_init_angle = DM8006_Date[0].real_angle;
 }
 
 /// @brief 达妙电机的pid计算
-/// @param bat_control 
-void DM_motor_pid_clac(bat_control_t *bat_control)
+/// @param bat_control
+static void motor_pid_clac(bat_control_t *bat_control)
 {
 
     for (int i = 0; i < 3; i++)
     {
-        bat_control->DM_Motor_PID_angle[i].NowError = DM4340_Date[i].target_angle - DM4340_Date[i].real_angle;
+        /***********DM4340电机pid计算***********/
+        bat_control->DM_Motor_PID_angle[i].NowError = DM4340_Date[i].target_angle - DM4340_Date[i].real_angle; // bat_control->pitch_pos_filter.out
         PID_AbsoluteMode(&bat_control->DM_Motor_PID_angle[i]);
         bat_control->DM_Motor_PID_speed[i].NowError = bat_control->DM_Motor_PID_angle[i].PIDout - DM4340_Date[i].esc_back_speed;
         PID_AbsoluteMode(&bat_control->DM_Motor_PID_speed[i]);
         DM4340_Date[i].out_current = bat_control->DM_Motor_PID_speed[i].PIDout;
     }
 
-        bat_control->HT_Motor_PID_angle.NowError = HT04_Data.target_angle - HT04_Data.real_angle;
-        PID_AbsoluteMode(&bat_control->HT_Motor_PID_angle);
-        bat_control->HT_Motor_PID_speed.NowError = bat_control->HT_Motor_PID_angle.PIDout - HT04_Data.esc_back_speed;
-        PID_AbsoluteMode(&bat_control->HT_Motor_PID_speed);
-        HT04_Data.out_current = bat_control->HT_Motor_PID_speed.PIDout;
-
-        bat_control->DM_Motor_8006_PID_angle.NowError = DM8006_Date[0].target_angle - DM8006_Date[0].real_angle;
-        PID_AbsoluteMode(&bat_control->DM_Motor_8006_PID_angle);
-        bat_control->DM_Motor_8006_PID_speed.NowError = bat_control->DM_Motor_8006_PID_angle.PIDout - DM8006_Date[0].esc_back_speed;
-        PID_AbsoluteMode(&bat_control->DM_Motor_8006_PID_speed);
-        DM8006_Date[0].out_current = bat_control->DM_Motor_8006_PID_speed.PIDout;
-
+    /***********HT04电机pid计算***********/
+    bat_control->HT_Motor_PID_angle.NowError = HT04_Data.target_angle - HT04_Data.real_angle;
+    PID_AbsoluteMode(&bat_control->HT_Motor_PID_angle);
+    bat_control->HT_Motor_PID_speed.NowError = bat_control->HT_Motor_PID_angle.PIDout - HT04_Data.esc_back_speed;
+    PID_AbsoluteMode(&bat_control->HT_Motor_PID_speed);
+    HT04_Data.out_current = bat_control->HT_Motor_PID_speed.PIDout;
+    /***********8006电机pid计算***********/
+    bat_control->DM_Motor_8006_PID_angle.NowError = DM8006_Date[0].target_angle - DM8006_Date[0].real_angle; // DM8006_Date[0].real_angle;
+    PID_AbsoluteMode(&bat_control->DM_Motor_8006_PID_angle);
+    bat_control->DM_Motor_8006_PID_speed.NowError = bat_control->DM_Motor_8006_PID_angle.PIDout - DM8006_Date[0].esc_back_speed;
+    PID_AbsoluteMode(&bat_control->DM_Motor_8006_PID_speed);
+    DM8006_Date[0].out_current = bat_control->DM_Motor_8006_PID_speed.PIDout;
 }
 
 /// @brief 更新球拍的数据
-/// @param bat_control 
-void bat_data_update(bat_control_t *bat_control)
+/// @param bat_control
+static void bat_data_update(bat_control_t *bat_control)
 {
-    //Forward_Kinematics(bat_control ,DM4340_Date[0].real_angle, DM4340_Date[1].real_angle,DM4340_Date[2].real_angle);
-    Forward_Kinematics(bat_control ,DM4340_Date[0].target_angle, DM4340_Date[1].target_angle,DM4340_Date[2].target_angle);
-
+    Forward_Kinematics(&bat_control->pos_angle_data.CurrentPoint, DM4340_Date[0].real_angle, DM4340_Date[1].real_angle, DM4340_Date[2].real_angle);
+    // Forward_Kinematics(bat_control ,DM4340_Date[0].target_angle, DM4340_Date[1].target_angle,DM4340_Date[2].target_angle);
 }
 /// @brief 发送电机控制信号
-/// @param bat_control 
-void DM_motor_control(bat_control_t *bat_control)
+/// @param bat_control
+static void bat_motor_control(bat_control_t *bat_control)
 {
 
-    //MD_motor_SendCurrent(&hcan2 , 0x01 , DM4340_Date[0].out_current);
-    //osDelay(1);
-    //MD_motor_SendCurrent(&hcan2 , 0x02 , DM4340_Date[1].out_current);
-    //osDelay(1);
-    //MD_motor_SendCurrent(&hcan2 , 0x03 , DM4340_Date[2].out_current);
-    //osDelay(1);
-    MD_motor_SendCurrent(&hcan2 , 0x04 , (DM8006_Date[0].out_current +(4.998f * sin(-(DM8006_Date->real_angle) ))));
-    //这里做了一个简单的重力补偿
+    // MD4340_motor_PID_Control(&hcan2 , 0x01 , DM4340_Date[0].out_current);
+    // osDelay(1);
+    // MD4340_motor_PID_Control(&hcan2 , 0x02 , DM4340_Date[1].out_current);
+    // osDelay(1);
+    // MD4340_motor_PID_Control(&hcan2 , 0x03 , DM4340_Date[2].out_current);
+    // osDelay(1);
+
+    DM8006_motor_PID_Control(&hcan2, 0x04, DM8006_Date[0].out_current); // +(4.998f * sin(-(DM8006_Date->real_angle) ))));
+    // 这里做了一个简单的重力补偿
     osDelay(1);
-    //MD_motor_SendCurrent(&hcan2 , 0x01 , 0);
-    //osDelay(1);
-    //MD_motor_SendCurrent(&hcan2 , 0x02 , 0);
-    //osDelay(1);
-    //MD_motor_SendCurrent(&hcan2 , 0x03 , 0);
-    //osDelay(1);
-    
+    HT04_motor_PID_Control(&hcan1, 0x50, HT04_Data.out_current);
+    osDelay(1);
 }
 
-
-
-void top_RC_control_set(bat_control_t *bat_control)
+static void top_RC_control_set(bat_control_t *bat_control)
 {
-    //delta_arm_inverse_calculation(bat_control , 0 , 0, 0);
+    // delta_arm_inverse_calculation(bat_control , 0 , 0, 0);
     if (robot_StateMode.roboMode == 4) // 机器人模式为4时，使用遥控器控制球拍
     {
         bat_control->set_x = (bat_control->control_RC->rc.ch[0] / 66);
         bat_control->set_y = (bat_control->control_RC->rc.ch[1] / 66);
         bat_control->set_z = fabs(bat_control->control_RC->rc.ch[3] / 33);
-        bat_control->set_pitch = bat_control->control_RC->rc.ch[4] / 660;
+        bat_control->set_pitch = -(bat_control->control_RC->rc.ch[4] / 2000);
 
-        delta_arm_inverse_calculation(bat_control , bat_control->set_x , bat_control->set_y, bat_control->set_z);
+        first_order_filter_cali(&bat_control->input_set_X_filter, bat_control->set_x);
+        first_order_filter_cali(&bat_control->input_set_Y_filter, bat_control->set_y);
+        first_order_filter_cali(&bat_control->input_set_Z_filter, bat_control->set_z);
+        first_order_filter_cali(&bat_control->input_pitch_pos_filter, bat_control->set_pitch);
+
+        delta_arm_inverse_calculation(&bat_control->pos_angle_data.CurrentAngle, bat_control->set_x, bat_control->set_y, bat_control->set_z);
     }
 
-    if (robot_StateMode.roboMode == 5)//机器人模式为5时，使用遥控器控制击球杆
-    {   
-        if (bat_control->control_RC->rc.ch[2] > 500) 
-            {bat_control }
+    else if (robot_StateMode.roboMode == 5) // 机器人模式为5时，使用遥控器控制击球杆
+    {
 
+        if (bat_control->control_RC->rc.ch[2] > 400)
+        //// 此处设定击球值，还需要编码处理，进行编码值绝对化，尽可能保证击球速度，尝试一下
+        //// 或者是利用车速加上击球杆的冲量（可能要加以配重处理）来控制击球速度
+        {
+            bat_control->striker_state = BAT_is_RUNNING;
+            bat_control->set_striker_angle = 0.0f;
+            HT04_Data.target_angle = 100;
+        }
     }
-    DM8006_Date->target_angle = (limit_bat_pitch ( DM8006_Date->target_angle + bat_control->set_pitch ));  
+    else
+    {
+        // 否则全部回0点待命
+        bat_control->set_x = 0.0f;
+        bat_control->set_y = 0.0f;
+        bat_control->set_z = 0.0f;
+        bat_control->set_pitch = 0.0f;
+        bat_control->set_striker_angle = 0.0f;
 
-    DM4340_Date[0].target_angle = float_constrain(bat_control->top_inverse_angle.angle[0], 9.367, 54.367);
-    DM4340_Date[1].target_angle = float_constrain(bat_control->top_inverse_angle.angle[1], 8.809, 53.809);
-    DM4340_Date[2].target_angle = float_constrain(bat_control->top_inverse_angle.angle[2], 9.903, 54.903);
+        first_order_filter_cali(&bat_control->input_set_X_filter, bat_control->set_x);
+        first_order_filter_cali(&bat_control->input_set_Y_filter, bat_control->set_y);
+        first_order_filter_cali(&bat_control->input_set_Z_filter, bat_control->set_z);
+        first_order_filter_cali(&bat_control->input_pitch_pos_filter, bat_control->set_pitch);
 
+        delta_arm_inverse_calculation(&bat_control->pos_angle_data.DesireAngle, bat_control->set_x, bat_control->set_y, bat_control->set_z);
+    }
+
+    DM8006_Date->target_angle = (limit_bat_pitch(DM8006_Date->target_angle + bat_control->set_pitch));
+
+    HT04_Data.target_angle = bat_control->set_striker_angle;
+
+    DM4340_Date[0].target_angle = float_constrain(bat_control->pos_angle_data.DesireAngle.theta1, 9.367, 54.367);
+    DM4340_Date[1].target_angle = float_constrain(bat_control->pos_angle_data.DesireAngle.theta2, 8.809, 53.809);
+    DM4340_Date[2].target_angle = float_constrain(bat_control->pos_angle_data.DesireAngle.theta3, 9.903, 54.903);
 }
 
 /// @brief    限幅函数
@@ -260,7 +301,7 @@ float float_constrain(float Value, float minValue, float maxValue)
         return Value;
 }
 
-//球拍俯仰角的限幅函数
+// 球拍俯仰角的限幅函数
 static float limit_bat_pitch(float Value)
 {
     if (Value < -50)
@@ -270,7 +311,6 @@ static float limit_bat_pitch(float Value)
     else
         return Value;
 }
-
 
 float RUD_DirAngle_c(float Angle)
 {
@@ -289,7 +329,6 @@ float RUD_DirAngle_c(float Angle)
 }
 
 // 计算力矩
-
 
 /*
 // 球拍姿态解算
@@ -336,7 +375,7 @@ void delta_arm_inverse_calculation(float x, float y, float z,  top_inverse_calcu
 /// @param x 目标位置x
 /// @param y 目标位置y
 /// @param z 目标位置z
-void delta_arm_inverse_calculation(bat_control_t *bat_control ,float x, float y, float z)
+static void delta_arm_inverse_calculation(struct Angle *angle, float x, float y, float z)
 {
     // 不使用全局变量
     z -= 235;
@@ -344,12 +383,12 @@ void delta_arm_inverse_calculation(bat_control_t *bat_control ,float x, float y,
     double B1 = -((-5.9505f) - x);
     double C1 = z;
 
-    double A2 = (x * x + y * y + z* z + 35.4084f + (x - 1.73205f * y) * (-5.9505f)) / L1;
+    double A2 = (x * x + y * y + z * z + 35.4084f + (x - 1.73205f * y) * (-5.9505f)) / L1;
     double B2 = -2 * ((-5.9505f)) - (x - 1.73205f * y);
     double C2 = 2 * z;
 
-    double A3 = (x * x + y * y + z* z + 35.4084f + (x - 1.73205f * y) * (-5.9505f)) / L1;
-    double B3 = -2 * ((-5.9505f)) - (x + 1.73205f  * y);
+    double A3 = (x * x + y * y + z * z + 35.4084f + (x - 1.73205f * y) * (-5.9505f)) / L1;
+    double B3 = -2 * ((-5.9505f)) - (x + 1.73205f * y);
     double C3 = 2 * z;
 
     double K1 = A1 + B1;
@@ -368,21 +407,20 @@ void delta_arm_inverse_calculation(bat_control_t *bat_control ,float x, float y,
     double T2 = (-U2 - sqrt(U2 * U2 - 4 * K2 * V2)) / (2 * K2);
     double T3 = (-U3 - sqrt(U3 * U3 - 4 * K3 * V3)) / (2 * K3);
 
-    bat_control->top_inverse_angle.angle[0] = ((180 * (2 * atan(T1))) / PI) - 0.186f;
-    bat_control->top_inverse_angle.angle[1] = ((180 * (2 * atan(T2))) / PI) + 0.208f;
-    bat_control->top_inverse_angle.angle[2] = ((180 * (2 * atan(T3))) / PI) - 0.448f;
+    angle->theta1 = ((180 * (2 * atan(T1))) / PI) - 0.186f;
+    angle->theta2 = ((180 * (2 * atan(T2))) / PI) + 0.208f;
+    angle->theta3 = ((180 * (2 * atan(T3))) / PI) - 0.448f;
 }
-
 
 /// @brief dleta机械臂正解出当前中心点坐标
 /// @param bat_control 机械臂控制结构体
 /// @param theta1 输入角度1
 /// @param theta2 输入角度2
 /// @param theta3 输入角度3
-void Forward_Kinematics(bat_control_t *bat_control, float theta1, float theta2, float theta3)
+void Forward_Kinematics(struct Point *Point, float theta1, float theta2, float theta3)
 {
 
-    //输入角度加上数据是为了消除初始角度的些许不同
+    // 输入角度加上数据是为了消除初始角度的些许不同
     theta1 = (PI * (theta1 - 0.208f) / 180);
     theta2 = (PI * (theta2 + 0.448f) / 180);
     theta3 = (PI * (theta3 + 0.186f) / 180);
@@ -412,64 +450,16 @@ void Forward_Kinematics(bat_control_t *bat_control, float theta1, float theta2, 
     double X = E1 * Z + F1;
     double Y = E2 * Z + F2;
 
-    bat_control->bat_space_pos.real_x = X;
-    bat_control->bat_space_pos.real_y = Y;
-    bat_control->bat_space_pos.real_z = Z + 235;
-
-}
-//// pos的PID初始化
-// static void POS_PID_init(M6020_PID_t *pid, fp32 maxout, fp32 max_iout, fp32 kp, fp32 ki, fp32 kd)
-//{
-//     if (pid == NULL)
-//     {
-//         return;
-//     }
-//     pid->kp = kp;
-//     pid->ki = ki;
-//     pid->kd = kd;
-//
-//     pid->err = 0.0f;
-//     pid->get = 0.0f;
-//
-//     pid->max_iout = max_iout;
-//     pid->max_out = maxout;
-// }
-//
-//// 6020的PID计算
-// static fp32 POS_PID_calc(M6020_PID_t *pid, fp32 get, fp32 set, fp32 error_delta)
-//{
-//     fp32 err;
-//     if (pid == NULL)
-//     {
-//         return 0.0f;
-//     }
-//     pid->get = get;
-//     pid->set = set;
-//
-//     err = set - get;
-//     pid->err = rad_format(err);
-//     pid->Pout = pid->kp * pid->err;
-//     pid->Iout += pid->ki * pid->err;
-//     pid->Dout = pid->kd * error_delta;
-//     abs_limit(&pid->Iout, pid->max_iout);
-//     pid->out = pid->Pout + pid->Iout + pid->Dout;
-//     abs_limit(&pid->out, pid->max_out);
-//     return pid->out;
-// }
-
-// 延时函数
-void delay(int count)
-{
-    int i;
-    for (i = 1; i <= count; i++)
-        ;
+    Point->x = X;
+    Point->y = Y;
+    Point->z = Z + 235;
 }
 
 /// @brief // 计算移动距离
-/// @param point1 
-/// @param point2 
+/// @param point1
+/// @param point2
 /// @return 返回两点之间的距离
-float CalDistance2Point(struct Point point1, struct Point point2) 
+static float CalDistance2Point(struct Point point1, struct Point point2)
 {
     float x_Offset = point1.x - point2.x;
     float y_Offset = point1.y - point2.y;
@@ -483,9 +473,12 @@ float CalDistance2Point(struct Point point1, struct Point point2)
     return distance;
 }
 
-
 /// @brief 计算两点的插值
-struct Point GetPointInLine(struct Point currentP, struct Point desiredP, float t) 
+/// @param currentP 当前点
+/// @param desiredP 目标点
+/// @param t 百分比
+/// @return point 返回插值点
+static struct Point GetPointInLine(struct Point currentP, struct Point desiredP, float t)
 {
     struct Point buffer;
 
@@ -496,35 +489,52 @@ struct Point GetPointInLine(struct Point currentP, struct Point desiredP, float 
     return buffer;
 }
 
-bool_t auto_hit_ball_loop(int speed)
+static bool_t auto_hit_ball_loop(bat_control_t *bat_control)
 {
-    float distance2Point = CalDistance2Point(Data.CurrentPoint, Data.DesiredPoint); // 计算移动距离
-        if (distance2Point == 0) // 距离=0
+
+    //此处是计算当前点和目标点两点之间的距离
+    float distance2Point = CalDistance2Point(bat_control->pos_angle_data.BallCurrentPoint, bat_control->pos_angle_data.DesiredPoint); // 计算移动距离
+    if (distance2Point == 0)                                                                                              // 距离=0
     {
-        // Data.IsExecutedGcode = true;
+        //无变动则退出函数
         return 0;
     }
 
-    struct Angle angle_; // 目标位置逆解
-    //Inverse_Kinematics(Data.DesiredPoint.x, Data.DesiredPoint.y, Data.DesiredPoint.z, &angle_);
-
-        int NumberSegment = floorf(distance2Point / MMPerLinearSegment); // 求段数
+    //求解遍历段数，要把distance距离分成多少段
+    int NumberSegment = floorf(distance2Point / MMPerLinearSegment); // 求插值需要的段数
     if (NumberSegment < 1)
         NumberSegment = 1;
 
     float tbuffer;
     // struct Angle lastAngle = Data.CurrentAngle;//有新的目标角度时，当前角度即为过去
-    struct Angle currentAngle;
-    float mm_per_seg = distance2Point / NumberSegment; // 每段实际长度
 
-        for (uint16_t i = 1; i <= NumberSegment; i++) // 遍历每一段
+    // 每段实际长度，，分段移动让运动更为平滑
+    float mm_per_seg = distance2Point / NumberSegment; 
+
+    for (uint16_t i = 1; i <= NumberSegment; i++) // 遍历每一段
     {
+        //
         tbuffer = (float)i / NumberSegment;
-        struct Point pointBuffer = GetPointInLine(Data.CurrentPoint, Data.DesiredPoint, tbuffer); // 求插值点坐标
-        //Inverse_Kinematics(pointBuffer.x, pointBuffer.y, pointBuffer.z, &currentAngle);           // 插值点坐标逆解
+        struct Point pointBuffer = GetPointInLine(bat_control->pos_angle_data.BallCurrentPoint, bat_control->pos_angle_data.DesiredPoint, tbuffer); // 求插值点坐标
 
-        //电机控制部分
+        delta_arm_inverse_calculation(&bat_control->pos_angle_data.DesireAngle, pointBuffer.x, pointBuffer.y, pointBuffer.z); // 逆解算当前所需的角度
 
+        // 电机控制部分
+        for (int i = 0; i < 3; i++)
+        {
+            /***********DM4340电机pid计算***********/
+            bat_control->DM_Motor_PID_angle[i].NowError = DM4340_Date[i].target_angle - DM4340_Date[i].real_angle; // bat_control->pitch_pos_filter.out
+            PID_AbsoluteMode(&bat_control->DM_Motor_PID_angle[i]);
+            bat_control->DM_Motor_PID_speed[i].NowError = bat_control->DM_Motor_PID_angle[i].PIDout - DM4340_Date[i].esc_back_speed;
+            PID_AbsoluteMode(&bat_control->DM_Motor_PID_speed[i]);
+            DM4340_Date[i].out_current = bat_control->DM_Motor_PID_speed[i].PIDout;
+        }
+        MD4340_motor_PID_Control(&hcan2 , 0x01 , DM4340_Date[0].out_current);
+        osDelay(1);
+        MD4340_motor_PID_Control(&hcan2 , 0x02 , DM4340_Date[1].out_current);
+        osDelay(1);
+        MD4340_motor_PID_Control(&hcan2 , 0x03 , DM4340_Date[2].out_current);
+        osDelay(1);
 
         ///////////
 
@@ -532,9 +542,9 @@ bool_t auto_hit_ball_loop(int speed)
         // lastAngle = currentAngle;
     }
 
-    Data.CurrentPoint = Data.DesiredPoint; // 遍历到最后，目标位置即为当前位置
+    bat_control->pos_angle_data.CurrentPoint = bat_control->pos_angle_data.DesiredPoint; // 遍历到最后，目标位置即为当前位置
     // Data.CurrentAngle = currentAngle;      // 目标角度即为当前角度
-    Data.CurrentAngle = currentAngle;
+    bat_control->pos_angle_data.CurrentAngle = bat_control->pos_angle_data.DesireAngle;
 
     return 1;
 }
