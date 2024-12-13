@@ -3,12 +3,14 @@
 #include "remote_control.h"
 #include "chassis.h"
 #include "variables.h"
+#include "Monitor.h"
 
 #include "math.h"
 
 extern CAN_HandleTypeDef hcan1;
 extern CAN_HandleTypeDef hcan2;
 extern RC_ctrl_t rc_ctrl;
+extern s_FPS_monitor FPS;
 
 motor_measure_t motor_Date[8]; // RM电机回传数据结构体
 
@@ -243,6 +245,9 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
             static uint8_t i = 0;
             i = rx_header_can1.StdId - CAN_3508_M1_ID;
             get_motor_measure(&motor_Date[i], rx_data_can1);
+            if (i == 0)      {FPS.M3508_M1++;}
+            else if (i == 1) {FPS.M3508_M2++;}
+            else if (i == 2) {FPS.M3508_M3++;}
             break;
         }
 
@@ -252,7 +257,9 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
             HT04_CanReceive(&HT04_Data, rx_data_can1);
 
             HT04_Data.esc_back_position_last = HT04_Data.esc_back_position;
-            HT04_Data.real_angle = HT04_Data.esc_back_position * 57.29577951308f;             break;
+            HT04_Data.real_angle = HT04_Data.esc_back_position * 57.29577951308f;
+            FPS.Striker_HT04++;
+            break;
         }
         default:
         {
@@ -277,22 +284,17 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 
             DM4340_Date[0].esc_back_position_last = DM4340_Date[0].esc_back_position;
             DM4340_Date[0].real_angle = DM4340_Date[0].esc_back_position * 57.29577951308f; // RUD_DirAngle_Proc(DM4340_Date[0].serial_angle);
-
+            FPS.DM4340_M1++;
             break;
         }
         case DM4340_M2:
         {
             DM4340_Date[1].id = (rx_data_can2[0]) & 0x0F;
             MD_CanReceive(&DM4340_Date[1], rx_data_can2);
-
-            if (fabs(DM4340_Date[1].esc_back_position_last - DM4340_Date[1].esc_back_position) < 0.002 )
-            {
-                DM4340_Date[1].esc_back_position = DM4340_Date[1].esc_back_position_last ;
-            }
             
             DM4340_Date[1].esc_back_position_last = DM4340_Date[1].esc_back_position;
-            
             DM4340_Date[1].real_angle = DM4340_Date[1].esc_back_position * 57.29577951308f;
+            FPS.DM4340_M2++;
             break;
         }
         case DM4340_M3:
@@ -302,20 +304,17 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 
             DM4340_Date[2].esc_back_position_last = DM4340_Date[2].esc_back_position;
             DM4340_Date[2].real_angle = DM4340_Date[2].esc_back_position * 57.29577951308f;
+            FPS.DM4340_M3++;
             break;
         }
         case DM8006_M1:
         {
             DM8006_Date[0].id = (rx_data_can2[0]) & 0x0F;
-
             MD_CanReceive(&DM8006_Date[0], rx_data_can2);
 
-            //if (fabs(DM8006_Date[0].esc_back_position_last - DM8006_Date[0].esc_back_position) < 0.003 )
-            //{
-            //    DM8006_Date[0].esc_back_position = DM8006_Date[0].esc_back_position_last ;
-            //}
             DM8006_Date[0].esc_back_position_last = DM8006_Date[0].esc_back_position;
             DM8006_Date[0].real_angle = DM8006_Date[0].esc_back_position * 57.29577951308f;
+            FPS.Pitch_DM8006++;
             break;
         }
 

@@ -10,7 +10,7 @@
 #include "math.h"
 #include "INS_task.h"
 #include "Variables.h"
-#include "Monitor_task.h"
+#include "Monitor.h"
 
 #include "cmsis_os.h"
 #include "FreeRTOS.h"
@@ -61,8 +61,9 @@ extern UART_HandleTypeDef huart1;
 extern motor_measure_t motor_Date[8];
 extern s_IMU_all_Value IMU_All_Value; // 储存imu数据结构体
 extern s_robo_Mode_Setting robot_StateMode; // 储存机器人当前模式
+extern s_task_flags task_flags;             // 引用任务标志结构体
 
-chassis_control_t motor_control;
+extern chassis_control_t motor_control;
 s_pid_absolute_t M3508_speed_pid;
 
 
@@ -74,14 +75,8 @@ s_pid_absolute_t M3508_speed_pid;
             (ecd) += ECD_RANGE; \
     }
 
-static void motor_init(chassis_control_t *init);
-static void motor_control_send(chassis_control_t *control_loop);
-static void chassis_feedback_update(chassis_control_t *feedback_update);
-static void chassis_movement_calc(chassis_control_t *motor_control);
-static void rc_to_motor_set(chassis_control_t *motor_control);
-static void chassis_mode_set(chassis_control_t *chassis_control);
+
 static int16_t rc_dead_zone(int16_t rc_data);
-static void chassis_mode_switch(chassis_control_t *chassis_mode_change);
 
 // static fp32 M6020_PID_calc(M6020_PID_t *pid, fp32 get, fp32 set, fp32 error_delta);
 // static void M6020_PID_init(M6020_PID_t *pid, fp32 maxout, fp32 max_iout, fp32 kp, fp32 ki, fp32 kd);
@@ -89,41 +84,15 @@ static void chassis_mode_switch(chassis_control_t *chassis_mode_change);
 // static void motor_feedback_update(chassis_control_t *feedback_update);
 // static void M6020_PID_clear(M6020_PID_t *M6020_pid_clear);
 
-//  主线程
-void chassis_task(void const *argument)
-{
-    vTaskDelay(5000);
-
-    motor_init(&motor_control);
-
-    while (1)
-    {
-        // uart_dma_printf(&huart1,"%4.3f ,%1.1f ,%4.3f\n",
-        // rc_ctrl.rc.ch[0], rc_ctrl.rc.ch[1], rc_ctrl.rc.ch[2]);
-        // 选择进入控制模式
-
-        chassis_feedback_update(&motor_control);
-
-        chassis_mode_switch(&motor_control);
-
-        rc_to_motor_set(&motor_control);
-
-        chassis_movement_calc(&motor_control);
-
-        motor_control_send(&motor_control);
-
-        osDelay(1);
-    }
-}
 
 // 电机数据的初始化
-static void motor_init(chassis_control_t *init)
+void motor_init(chassis_control_t *init)
 {
     // 底盘速度环pid值
 
     const static fp32 chassis_x_order_filter[1] = {CHASSIS_ACCEL_X_NUM};
     const static fp32 chassis_y_order_filter[1] = {CHASSIS_ACCEL_Y_NUM};
-
+    const static fp32 chassis_w_order_filter[1] = {CHASSIS_ACCEL_Y_NUM};
     // 电机数据指针获取
     init->chassis_motor.M3508[0].chassis_motor_measure = get_3508_M1_motor_measure_point();
     init->chassis_motor.M3508[1].chassis_motor_measure = get_3508_M2_motor_measure_point();
@@ -131,9 +100,6 @@ static void motor_init(chassis_control_t *init)
 
     // 遥控器数据指针获取
     init->chassis_RC = get_remote_control_point();
-
-    // 机器人状态模式数据获取
-    init->robot_StateMode = get_robot_mode_pint();
 
     // 陀螺仪数据获取
     init->chassis_INS_angle = get_INS_angle_point();
@@ -145,6 +111,8 @@ static void motor_init(chassis_control_t *init)
 
     first_order_filter_init(&init->chassis_cmd_slow_set_vx, 0.002f, chassis_x_order_filter);
     first_order_filter_init(&init->chassis_cmd_slow_set_vy, 0.002f, chassis_y_order_filter);
+    first_order_filter_init(&init->chassis_cmd_slow_set_vw, 0.002f, chassis_w_order_filter);
+
     // 底盘速度数据初始化
     for (uint8_t i = 0; i < motor_3505_num; i++)
     {
@@ -152,21 +120,20 @@ static void motor_init(chassis_control_t *init)
     }
 
     init->chassis_yaw = *(init->chassis_INS_angle + INS_YAW_ADDRESS_OFFSET); // 底盘姿态角度初始化
-}
 
-
-// 底盘模式更变数据处理
-static void chassis_mode_switch(chassis_control_t *chassis_mode_change)
-{
+    // 底盘初始化完成标志
+    task_flags.chassis_Init_flag = 1;
 
 }
+
+
 
 // 3508的pid计算
 
 // 速度环pid
 
 // 底盘的数据反馈
-static void chassis_feedback_update(chassis_control_t *feedback_update)
+void chassis_feedback_update(chassis_control_t *feedback_update)
 {
     if (feedback_update == NULL)
     {
@@ -182,34 +149,38 @@ static void chassis_feedback_update(chassis_control_t *feedback_update)
     feedback_update->vx = feedback_update->chassis_motor.M3508[0].motor_speed * sqrt(3) / 2 - feedback_update->chassis_motor.M3508[1].motor_speed * sqrt(3) / 2;
     feedback_update->vy = feedback_update->chassis_motor.M3508[2].motor_speed - 0.5f * (feedback_update->chassis_motor.M3508[1].motor_speed + feedback_update->chassis_motor.M3508[1].motor_speed);
     feedback_update->wz = (feedback_update->chassis_motor.M3508[0].motor_speed + feedback_update->chassis_motor.M3508[1].motor_speed + feedback_update->chassis_motor.M3508[2].motor_speed) / 0.5f;
-
+    
+    feedback_update->chassis_yaw_last = feedback_update->chassis_yaw;
     // 计算底盘姿态角度, 底盘上有陀螺仪
     feedback_update->chassis_yaw = rad_format(*(feedback_update->chassis_INS_angle + INS_YAW_ADDRESS_OFFSET)); // - chassis_move_update->chassis_yaw_motor->relative_angle);
 }
 
 // 电机主控制循环
-static void motor_control_send(chassis_control_t *control_loop)
+ void motor_control_send(chassis_control_t *control_loop)
 {
     if (control_loop == NULL)
     {
         return;
     }
-    // 计算所有6020电机pid
 
     // 计算所有3508电机pid
     for (uint8_t i = 0; i < motor_3505_num; i++)
     {
         motor_single_loop_PID(&control_loop->chassis_motor.M3508[i].M3508_pid_speed, control_loop->chassis_motor.M3508[i].motor_speed_set, control_loop->chassis_motor.M3508[i].motor_speed);
-        motor_control.chassis_motor.M3508[i].given_current = control_loop->chassis_motor.M3508[i].M3508_pid_speed.PIDout;
-        motor_control.chassis_motor.M3508[i].current_set = (int16_t)motor_control.chassis_motor.M3508[i].given_current;
+        control_loop->chassis_motor.M3508[i].given_current = control_loop->chassis_motor.M3508[i].M3508_pid_speed.PIDout;
+        control_loop->chassis_motor.M3508[i].current_set = (int16_t)motor_control.chassis_motor.M3508[i].given_current;
     }
 
+    //为每个电机增加前馈
+    //control_loop->chassis_motor.M3508[0].current_set += 700;
+    //control_loop->chassis_motor.M3508[1].current_set += 700;
+    //control_loop->chassis_motor.M3508[2].current_set += 700;
     // 发送给电机数据
-    CAN_cmd_3508(motor_control.chassis_motor.M3508[0].given_current, motor_control.chassis_motor.M3508[1].given_current, motor_control.chassis_motor.M3508[2].given_current, 0x00);
+    CAN_cmd_3508(control_loop->chassis_motor.M3508[0].current_set, control_loop->chassis_motor.M3508[1].current_set, control_loop->chassis_motor.M3508[2].current_set, 0x00);
 }
 
 // 遥控器数据转电机数据
-static void rc_to_motor_set(chassis_control_t *motor_control)
+ void rc_to_motor_set(chassis_control_t *motor_control)
 {
 
     if (motor_control == NULL)
@@ -231,6 +202,8 @@ static void rc_to_motor_set(chassis_control_t *motor_control)
 
         first_order_filter_cali(&motor_control->chassis_cmd_slow_set_vx, motor_control->chassis_vx_ch);
         first_order_filter_cali(&motor_control->chassis_cmd_slow_set_vy, motor_control->chassis_vy_ch);
+        first_order_filter_cali(&motor_control->chassis_cmd_slow_set_vw, motor_control->chassis_wz_ch);
+
 
         // 停止区间
         if (motor_control->chassis_vx_ch < 12 * CHASSIS_VX_KP && motor_control->chassis_vx_ch < -12 * CHASSIS_VY_KP)
@@ -249,7 +222,7 @@ static void rc_to_motor_set(chassis_control_t *motor_control)
 }
 
 // 运动计算
-static void chassis_movement_calc(chassis_control_t *chassis_control)
+ void chassis_movement_calc(chassis_control_t *chassis_control)
 {
     // 此处为遥控器控制的方式
     if (chassis_control == NULL)
@@ -269,16 +242,23 @@ static void chassis_movement_calc(chassis_control_t *chassis_control)
         // 设置底盘控制的角度
         chassis_control->chassis_yaw_set = chassis_control->chassis_yaw;
         // 计算底盘角度差
-        delat_angle = rad_format(chassis_control->chassis_yaw_set - chassis_control->chassis_yaw);
+        delat_angle = rad_format(chassis_control->chassis_yaw_set - chassis_control->chassis_yaw_last);
         // calculate rotation speed
         // 计算旋转的角速度,输入值与角度补正的和
         chassis_control->wz_set = chassis_control->chassis_wz_ch + motor_single_loop_PID(&chassis_control->chassis_pid_angle, 0.0f, delat_angle);
         // speed limit
 
+        //这里换成串级pid，角度值内环，角速度未外环
         // 计算各个电机速度,三全向解算
-        motor_speed_calc[0] = RofCenter * chassis_control->wz_set / 3 + chassis_control->vx_set * sqrt(3) / 3 - chassis_control->vy_set / 3;
-        motor_speed_calc[1] = RofCenter * chassis_control->wz_set / 3 - chassis_control->vx_set * sqrt(3) / 3 - chassis_control->vy_set / 3;
-        motor_speed_calc[2] = RofCenter * chassis_control->wz_set / 3 + chassis_control->vy_set * 2 / 3;
+//        motor_speed_calc[0] = RofCenter * chassis_control->wz_set / 3 + chassis_control->vx_set * sqrt(3) / 3 - chassis_control->vy_set / 3;
+//        motor_speed_calc[1] = RofCenter * chassis_control->wz_set / 3 - chassis_control->vx_set * sqrt(3) / 3 - chassis_control->vy_set / 3;
+//        motor_speed_calc[2] = RofCenter * chassis_control->wz_set / 3 + chassis_control->vy_set * 2 / 3;
+
+
+        // 计算各个电机速度,三全向解算
+        motor_speed_calc[0] = RofCenter * chassis_control->wz_set + chassis_control->vx_set * sqrt(3) / 2 - chassis_control->vy_set / 2;
+        motor_speed_calc[1] = RofCenter * chassis_control->wz_set - chassis_control->vx_set * sqrt(3) / 2 - chassis_control->vy_set / 2;
+        motor_speed_calc[2] = RofCenter * chassis_control->wz_set + chassis_control->vy_set ;
 
         for (uint8_t i = 0; i < motor_3505_num; i++)
         {
@@ -286,7 +266,7 @@ static void chassis_movement_calc(chassis_control_t *chassis_control)
         }
     }
 
-    if (robot_StateMode.roboMode == 0)
+    else if (robot_StateMode.roboMode != 3)
     {
         chassis_control->chassis_yaw_set = rad_format(angle_set);
         fp32 delat_angle = 0.0f;
@@ -295,6 +275,11 @@ static void chassis_movement_calc(chassis_control_t *chassis_control)
         chassis_control->wz_set = 0.0;
         chassis_control->vx_set = 0.0f;
         chassis_control->vy_set = 0.0f;
+
+                // 计算各个电机速度,三全向解算
+        motor_speed_calc[0] = RofCenter * chassis_control->wz_set + chassis_control->vx_set * sqrt(3) / 2 - chassis_control->vy_set / 2;
+        motor_speed_calc[1] = RofCenter * chassis_control->wz_set - chassis_control->vx_set * sqrt(3) / 2 - chassis_control->vy_set / 2;
+        motor_speed_calc[2] = RofCenter * chassis_control->wz_set + chassis_control->vy_set ;
 
         for (uint8_t i = 0; i < motor_3505_num; i++)
         {

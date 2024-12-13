@@ -1,8 +1,17 @@
 #include "Variables.h"
 #include "pid.h"
 #include "can_recv.h"
+#include "Monitor.h"
+#include "chassis.h"
+#include "bat_control.h"
+
 
 /********************************** global variable ****************************************/
+s_robo_Mode_Setting robot_StateMode;
+s_task_flags task_flags;
+
+chassis_control_t motor_control;
+bat_control_t bat_control;
 /********************************** Motor variable ****************************************/
 s_pid_absolute_t M3508_pid_speed;
 

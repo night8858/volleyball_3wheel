@@ -6,7 +6,7 @@
 #include "pid.h"
 #include "remote_control.h"
 #include "user_lib.h"
-#include "Monitor_task.h"
+
 
 #define PI 3.141592653824f
 
@@ -14,18 +14,23 @@
 #define motor_3505_num 3
 
 // PID宏定义参数
-#define M3505_MOTOR_SPEED_PID_KP 12.0f
-#define M3505_MOTOR_SPEED_PID_KI 0.0f
-#define M3505_MOTOR_SPEED_PID_KD 3.4f
-#define M3505_MOTOR_SPEED_PID_MAX_OUT 15000.0f
+#define M3505_MOTOR_SPEED_PID_KP 14.0f
+#define M3505_MOTOR_SPEED_PID_KI 1.0f
+#define M3505_MOTOR_SPEED_PID_KD 0.0f
+#define M3505_MOTOR_SPEED_PID_MAX_OUT 4000.0f
 #define M3505_MOTOR_SPEED_PID_MAX_IOUT 14000.0f
 
-#define CHASSIS_ANGLE_PID_KP 4000.0f
+#define CHASSIS_ANGLE_PID_KP -5000.0f
 #define CHASSIS_ANGLE_PID_KI 0.0f
 #define CHASSIS_ANGLE_PID_KD 1.2f
 #define CHASSIS_ANGLE_PID_MAX_OUT 12000.0f
 #define CHASSIS_ANGLE_PID_MAX_IOUT 8000.0f
 
+#define CHASSIS_ANGLE_SPEED_PID_KP 1.0f
+#define CHASSIS_ANGLE_SPEED_PID_KI 0.0f
+#define CHASSIS_ANGLE_SPEED_PID_KD 0.0f
+#define CHASSIS_ANGLE_SPEED_PID_MAX_OUT 12000.0f
+#define CHASSIS_ANGLE_SPEED_PID_MAX_IOUT 8000.0f
 
 #define M6020_MOTOR_SPEED_PID_KP 2.0f
 #define M6020_MOTOR_SPEED_PID_KI 0.0f
@@ -41,9 +46,9 @@
 
 // 控制参数宏定义
 #define MOTOR_ECD_TO_RAD 0.000766990394f //      2*  PI  /8192
-#define CHASSIS_VX_KP 12                 // x速度比例
-#define CHASSIS_VY_KP 12                 // y速度比例
-#define CHASSIS_WZ_KP 40            // 角速度比例
+#define CHASSIS_VX_KP 16                 // x速度比例
+#define CHASSIS_VY_KP 6                 // y速度比例
+#define CHASSIS_WZ_KP 50            // 角速度比例
 #define CHASSIS_STOP_LINE 12             // 停止线位置
 
 
@@ -150,13 +155,11 @@ typedef struct
     const fp32 *chassis_INS_angle;    // the point to the euler angle of gyro sensor.获取陀螺仪解算出的欧拉角指针
     chassis_motor_t chassis_motor;    // chassis motor data.底盘电机数据
 
-    const s_robo_Mode_Setting *robot_StateMode;
-
     s_pid_absolute_t chassis_pid_angle;   //底盘角度pid
 
     first_order_filter_type_t chassis_cmd_slow_set_vx; // use first order filter to slow set-point.使用一阶低通滤波减缓设定值
     first_order_filter_type_t chassis_cmd_slow_set_vy; // use first order filter to slow set-point.使用一阶低通滤波减缓设定值
-
+    first_order_filter_type_t chassis_cmd_slow_set_vw;
     fp32 vx;     // chassis vertical speed, positive means forward,unit m/s. 底盘速度 前进方向 前为正，单位 m/s
     fp32 vy;     // chassis horizontal speed, positive means letf,unit m/s.底盘速度 左右方向 左为正  单位 m/s
     fp32 wz;     // chassis rotation speed, positive means counterclockwise,unit rad/s.底盘旋转角速度，逆时针为正 单位 rad/s
@@ -170,6 +173,7 @@ typedef struct
 
     fp32 chassis_yaw_set;
     fp32 chassis_yaw;
+    fp32 chassis_yaw_last;
 
     fp32 vx_max_speed; // max forward speed, unit m/s.前进方向最大速度 单位m/s
     fp32 vx_min_speed; // max backward speed, unit m/s.后退方向最大速度 单位m/s
@@ -180,5 +184,10 @@ typedef struct
 
 // extern void chasis_Task(void const * argument);
 
+void motor_init(chassis_control_t *init);
+void motor_control_send(chassis_control_t *control_loop);
+void chassis_feedback_update(chassis_control_t *feedback_update);
+void chassis_movement_calc(chassis_control_t *motor_control);
+void rc_to_motor_set(chassis_control_t *motor_control);
 
 #endif

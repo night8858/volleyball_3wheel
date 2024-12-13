@@ -5,7 +5,7 @@
 #include "bsp_can.h"
 #include "chassis.h"
 #include "pid.h"
-#include "Monitor_task.h"
+#include "Monitor.h"
 
 #define PI 3.141592653824f //圆周率
 
@@ -22,11 +22,11 @@
 //控球拍（bat）的PID参数//
 #define DM4340_ANGLE_PID_KP   1.3f    //
 #define DM4340_ANGLE_PID_KI   0.0f    //
-#define DM4340_ANGLE_PID_KD   7.0f
+#define DM4340_ANGLE_PID_KD   0.0f
 #define DM4340_ANGLE_PID_MAX_IOUT 100.0f //  
 #define DM4340_ANGLE_PID_MAX_OUT 10.0f //  
 
-#define DM4340_SPEED_PID_KP   2.6f    //
+#define DM4340_SPEED_PID_KP   1.0f    //
 #define DM4340_SPEED_PID_KI   0.0f    //
 #define DM4340_SPEED_PID_KD   0.0f
 #define DM4340_SPEED_PID_MAX_IOUT 100.0f //  
@@ -35,13 +35,13 @@
 
 
 //pitch俯仰角的PID参数//
-#define DM8006_ANGLE_PID_KP   2.9f    //
+#define DM8006_ANGLE_PID_KP   2.95f    //
 #define DM8006_ANGLE_PID_KI   0.0f    //
 #define DM8006_ANGLE_PID_KD   1.2f
 #define DM8006_ANGLE_PID_MAX_IOUT 100.0f //  
 #define DM8006_ANGLE_PID_MAX_OUT 60.0f //  
 
-#define DM8006_SPEED_PID_KP   0.3f    //不知道为什么大于0.3就震荡
+#define DM8006_SPEED_PID_KP   0.25f    //不知道为什么大于0.3就震荡
 #define DM8006_SPEED_PID_KI   0.0f    //
 #define DM8006_SPEED_PID_KD   0.0f
 #define DM8006_SPEED_PID_MAX_IOUT 100.0f //  
@@ -129,7 +129,6 @@ typedef enum
 typedef struct 
 {
     const RC_ctrl_t *control_RC;
-    const s_robo_Mode_Setting *robot_StateMode;  
 
     s_pid_absolute_t DM_Motor_PID_speed[3];
     s_pid_absolute_t DM_Motor_PID_angle[3];
@@ -170,5 +169,21 @@ typedef struct
     float set_striker_angle;
     
 }bat_control_t;
+
+
+
+void bat_motor_Init(bat_control_t *bat_control);
+void bat_motor_control(bat_control_t *bat_control);
+void motor_pid_clac(bat_control_t *bat_control);
+void top_RC_control_set(bat_control_t *bat_control);
+void bat_data_update(bat_control_t *bat_control);
+float float_constrain(float Value, float minValue, float maxValue);
+void delta_arm_inverse_calculation(struct Angle *angle, float x, float y, float z);
+void Forward_Kinematics(struct Point *Point, float theta1, float theta2, float theta3);
+
+bool_t auto_hit_ball_loop(bat_control_t *bat_control);
+float CalDistance2Point(struct Point point1, struct Point point2);
+struct Point GetPointInLine(struct Point currentP, struct Point desiredP, float t);
+
 
 #endif /* BAT_CONTROL_H_ */

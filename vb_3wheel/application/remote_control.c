@@ -26,6 +26,9 @@
 #include "FreeRTOS.h"
 #include "math.h"
 
+//用来计算DBUS的帧数
+uint16_t fps_remote_count = 0;
+
 extern UART_HandleTypeDef huart3;
 extern DMA_HandleTypeDef hdma_usart3_rx;
 
@@ -197,8 +200,10 @@ static void sbus_to_rc(volatile const uint8_t *sbus_buf, RC_ctrl_t *rc_ctrl)
     rc_ctrl->rc.ch[3] -= RC_CH_VALUE_OFFSET;
     rc_ctrl->rc.ch[4] -= RC_CH_VALUE_OFFSET;
 
-    if(fabs(rc_ctrl->rc.ch[0]) < 20)  {rc_ctrl->rc.ch[0] = 0;}
-    if(fabs(rc_ctrl->rc.ch[1]) < 20)  {rc_ctrl->rc.ch[1] = 0;}
-    if(fabs(rc_ctrl->rc.ch[2]) < 20)  {rc_ctrl->rc.ch[2] = 0;}
-    if(fabs(rc_ctrl->rc.ch[3]) < 20)  {rc_ctrl->rc.ch[3] = 0;}
+    if(fabs(rc_ctrl->rc.ch[0]) < 10)  {rc_ctrl->rc.ch[0] = 0;}
+    if(fabs(rc_ctrl->rc.ch[1]) < 10)  {rc_ctrl->rc.ch[1] = 0;}
+    if(fabs(rc_ctrl->rc.ch[2]) < 10)  {rc_ctrl->rc.ch[2] = 0;}
+    if(fabs(rc_ctrl->rc.ch[3]) < 10)  {rc_ctrl->rc.ch[3] = 0;}
+
+    fps_remote_count++;
 }

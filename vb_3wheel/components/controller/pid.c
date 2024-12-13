@@ -1,11 +1,11 @@
 /**
   ****************************(C) COPYRIGHT 2019 DJI****************************
   * @file       pid.c/h
-  * @brief      pid鐎圭偤鏁撶悰妤冨皑閹风兘鏁撻弬銈嗗闁跨喐鏋婚幏鐑芥晸閺傘倖瀚归柨鐔告灮閹风兘鏁撻弬銈嗗婵鏁撻弬銈嗗闁跨喐鏋婚幏绋癐D闁跨喐鏋婚幏鐑芥晸婵劕鍤遍柨鐔告灮閹风兘鏁撻弬銈嗗
+  * @brief      pid閻庡湱鍋ら弫鎾舵偘濡ゅ啫鐨戦柟椋庡厴閺佹捇寮妶鍡楊伓闂佽法鍠愰弸濠氬箯閻戣姤鏅搁柡鍌樺€栫€氬綊鏌ㄩ悢鍛婄伄闁归鍏橀弫鎾诲棘閵堝棗顏跺┑顔碱儔閺佹捇寮妶鍡楊伓闂佽法鍠愰弸濠氬箯缁嬬檺D闂佽法鍠愰弸濠氬箯閻戣姤鏅稿┑顔藉姇閸ら亶鏌ㄩ悢鍛婄伄闁归鍏橀弫鎾诲棘閵堝棗顏�
   * @note       
   * @history
   *  Version    Date            Author          Modification
-  *  V1.0.0     Dec-26-2018     RM              1. 闁跨喐鏋婚幏鐑芥晸閿燂拷
+  *  V1.0.0     Dec-26-2018     RM              1. 闂佽法鍠愰弸濠氬箯閻戣姤鏅搁柨鐕傛嫹
   *
   @verbatim
   ==============================================================================
@@ -42,12 +42,12 @@
   */
 /**
   * @brief          pid struct data init
-  * @param[out]     pid: PID闁跨喓绮ㄩ弸鍕晸閺傘倖瀚归柨鐔告灮閹烽攱瀵氶柨鐔告灮閹凤拷
-  * @param[in]      mode: PID_POSITION:闁跨喐鏋婚幏鐑解偓姝匢D
-  *                 PID_DELTA: 闁跨喐鏋婚幏鐑芥晸缁插様D
+  * @param[out]     pid: PID闂佽法鍠撶划銊╁几閸曨垱鏅搁柡鍌樺€栫€氬綊鏌ㄩ悢鍛婄伄闁圭兘鏀辩€垫岸鏌ㄩ悢鍛婄伄闁瑰嚖鎷�
+  * @param[in]      mode: PID_POSITION:闂佽法鍠愰弸濠氬箯閻戣В鍋撳鍖
+  *                 PID_DELTA: 闂佽法鍠愰弸濠氬箯閻戣姤鏅哥紒鎻掓D
   * @param[in]      PID: 0: kp, 1: ki, 2:kd
-  * @param[in]      max_out: pid闁跨喐鏋婚幏鐑芥晸閺傘倖瀚归柨鐔告灮閹凤拷
-  * @param[in]      max_iout: pid闁跨喐鏋婚幏鐑芥晸閺傘倖瀚归柨鐔告灮閹风兘鏁撻弬銈嗗闁跨噦鎷�
+  * @param[in]      max_out: pid闂佽法鍠愰弸濠氬箯閻戣姤鏅搁柡鍌樺€栫€氬綊鏌ㄩ悢鍛婄伄闁瑰嚖鎷�
+  * @param[in]      max_iout: pid闂佽法鍠愰弸濠氬箯閻戣姤鏅搁柡鍌樺€栫€氬綊鏌ㄩ悢鍛婄伄闁归鍏橀弫鎾诲棘閵堝棗顏堕梺璺ㄥ櫐閹凤拷
   * @retval         none
   */
 void PID_init(pid_type_def *pid, uint8_t mode, const fp32 PID[3], fp32 max_out, fp32 max_iout)
@@ -74,11 +74,11 @@ void PID_init(pid_type_def *pid, uint8_t mode, const fp32 PID[3], fp32 max_out, 
   * @retval         pid out
   */
 /**
-  * @brief          pid闁跨喐鏋婚幏鐑芥晸閺傘倖瀚�
-  * @param[out]     pid: PID闁跨喓绮ㄩ弸鍕晸閺傘倖瀚归柨鐔告灮閹烽攱瀵氶柨鐔告灮閹凤拷
-  * @param[in]      ref: 闁跨喐鏋婚幏鐑芥晸閺傘倖瀚归柨鐔告灮閹风兘鏁撻弬銈嗗
-  * @param[in]      set: 闁跨喎鈧喎鐣鹃崐锟�
-  * @retval         pid闁跨喐鏋婚幏鐑芥晸閿燂拷
+  * @brief          pid闂佽法鍠愰弸濠氬箯閻戣姤鏅搁柡鍌樺€栫€氾拷
+  * @param[out]     pid: PID闂佽法鍠撶划銊╁几閸曨垱鏅搁柡鍌樺€栫€氬綊鏌ㄩ悢鍛婄伄闁圭兘鏀辩€垫岸鏌ㄩ悢鍛婄伄闁瑰嚖鎷�
+  * @param[in]      ref: 闂佽法鍠愰弸濠氬箯閻戣姤鏅搁柡鍌樺€栫€氬綊鏌ㄩ悢鍛婄伄闁归鍏橀弫鎾诲棘閵堝棗顏�
+  * @param[in]      set: 闂佽法鍠庨埀顒傚枎閻ｉ箖宕愰敓锟�
+  * @retval         pid闂佽法鍠愰弸濠氬箯閻戣姤鏅搁柨鐕傛嫹
   */
 fp32 PID_calc(pid_type_def *pid, fp32 ref, fp32 set)
 {
@@ -124,8 +124,8 @@ fp32 PID_calc(pid_type_def *pid, fp32 ref, fp32 set)
   * @retval         none
   */
 /**
-  * @brief          pid 闁跨喐鏋婚幏鐑芥晸閺傘倖瀚归柨鐔告灮閹凤拷
-  * @param[out]     pid: PID闁跨喓绮ㄩ弸鍕晸閺傘倖瀚归柨鐔告灮閹烽攱瀵氶柨鐔告灮閹凤拷
+  * @brief          pid 闂佽法鍠愰弸濠氬箯閻戣姤鏅搁柡鍌樺€栫€氬綊鏌ㄩ悢鍛婄伄闁瑰嚖鎷�
+  * @param[out]     pid: PID闂佽法鍠撶划銊╁几閸曨垱鏅搁柡鍌樺€栫€氬綊鏌ㄩ悢鍛婄伄闁圭兘鏀辩€垫岸鏌ㄩ悢鍛婄伄闁瑰嚖鎷�
   * @retval         none
   */
 void PID_clear(pid_type_def *pid)
@@ -143,7 +143,7 @@ void PID_clear(pid_type_def *pid)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-/*********************婢х偤鍣哄寤滻D閹貉冨煑***********************/
+/*********************濠⒀呭仱閸ｅ搫顕ｅ婊籇闁硅矇鍐ㄧ厬***********************/
 void PID_IncrementMode(s_pid_increase_t *pid)
 {
 	 if(pid->kp<0) pid->kp=-pid->kp;
@@ -173,63 +173,63 @@ void PID_IncrementMode(s_pid_increase_t *pid)
    
 	 pid->ctrOut=-pid->OutMAX; 
 }
-/********************缂佹繂顕寤滻D閹貉冨煑**************************/
+/********************缂備焦绻傞顔碱嚕瀵ゆ换D闁硅矇鍐ㄧ厬**************************/
 
 /**
- * @brief 缂佹繂顕寤滻D鐠侊紕鐣�
+ * @brief 缂備焦绻傞顔碱嚕瀵ゆ换D閻犱緤绱曢悾锟�
  * @param s_pid_absolute_t *pid
  * @return float PIDout
  */
 void PID_AbsoluteMode(s_pid_absolute_t *pid)
 {
-    //PID閸氬嫮骞嗛懞鍌氫焊瀹革拷
-	pid->Perror = pid->NowError;                  //P閻滎垵濡崑蹇撴▕閺勵垰缍嬮崜宥呬焊瀹革拷
-	pid->Ierror += pid->NowError;                 //I閻滎垵濡崑蹇撴▕閺勵垯绗傞悽闈涙倵娑撯偓閻╁瓨瀵旂紒顓炲煂閻滄澘婀惃鍕焊瀹革拷
-	pid->Derror = pid->NowError - pid->LastError; //D閻滎垵濡崑蹇撴▕閺勵垰缍嬮崜宥呬焊瀹割喕绗屾稉濠冾偧閸嬪繐妯婇惃鍕▕閸婄》绱濋崡鍐蹭焊瀹割喖顤冮柌锟�
-	pid->LastError = pid->NowError;               //閺囧瓨鏌婇崑蹇撴▕	
-	//闂勬劕鍩楃粔顖氬瀻閸樺棗褰堕崑蹇撴▕
+    //PID闁告艾瀚獮鍡涙嚍閸屾矮鐒婄€归潻鎷�
+	pid->Perror = pid->NowError;                  //P闁绘粠鍨垫俊顓㈠磻韫囨挻鈻曢柡鍕靛灠缂嶅宕滃鍛剨鐎归潻鎷�
+	pid->Ierror += pid->NowError;                 //I闁绘粠鍨垫俊顓㈠磻韫囨挻鈻曢柡鍕靛灟缁楀倿鎮介棃娑欏€靛☉鎾亾闁烩晛鐡ㄧ€垫梻绱掗鐐茬厒闁绘粍婢樺﹢顏堟儍閸曨偂鐒婄€归潻鎷�
+	pid->Derror = pid->NowError - pid->LastError; //D闁绘粠鍨垫俊顓㈠磻韫囨挻鈻曢柡鍕靛灠缂嶅宕滃鍛剨鐎瑰壊鍠曠粭灞剧▔婵犲喚鍋ч柛瀣箰濡﹪鎯冮崟顐ｂ枙闁稿﹦銆嬬槐婵嬪础閸愯弓鐒婄€瑰壊鍠栭·鍐煂閿燂拷
+	pid->LastError = pid->NowError;               //闁哄洤鐡ㄩ弻濠囧磻韫囨挻鈻�	
+	//闂傚嫭鍔曢崺妤冪矓椤栨艾鐎婚柛妯烘瑜板爼宕戣箛鎾粹枙
 	if( pid->Ierror >= pid->IerrorLim) pid->Ierror =  pid->IerrorLim;
 	else if( pid->Ierror <= -pid->IerrorLim)  pid->Ierror =  -pid->IerrorLim;
-	//PID閸氬嫮骞嗛懞鍌濈翻閸戞椽鍣�
+	//PID闁告艾瀚獮鍡涙嚍閸屾繄缈婚柛鎴炴そ閸ｏ拷
 	pid->Pout = pid->Kp * pid->Perror;
 	pid->Iout = pid->Ki * pid->Ierror;
 	pid->Dout = pid->Kd * pid->Derror;
-	//PID閹槒绶崙娲櫤
+	//PID闁诡剚妲掔欢顓㈠礄濞差亜娅�
 	pid->PIDout = pid->Pout + pid->Iout + pid->Dout;
-	//闂勬劕鍩桺ID閹槒绶崙娲櫤
+	//闂傚嫭鍔曢崺妗篒D闁诡剚妲掔欢顓㈠礄濞差亜娅�
 	if(pid->PIDout > pid->PIDoutMAX) pid->PIDout = pid->PIDoutMAX;
 	else if(pid->PIDout < -pid->PIDoutMAX) pid->PIDout = -pid->PIDoutMAX;
 }
 /**
- * @brief 缂佹繂顕寤滻D鐠侊紕鐣�(缁夘垰鍨庨崚鍡欘瀲)
+ * @brief 缂備焦绻傞顔碱嚕瀵ゆ换D閻犱緤绱曢悾锟�(缂佸鍨伴崹搴ㄥ礆閸℃瑯鐎�)
  * @param s_pid_absolute_t *pid
  * @param float integral_apart_val
  * @return float PIDout
  */
 void PID_AbsoluteMode_integral_apart(s_pid_absolute_t *pid,float integral_apart_val)
 {
-    //PID閸氬嫮骞嗛懞鍌氫焊瀹革拷
-	pid->Perror = pid->NowError;                  //P閻滎垵濡崑蹇撴▕閺勵垰缍嬮崜宥呬焊瀹革拷
+    //PID闁告艾瀚獮鍡涙嚍閸屾矮鐒婄€归潻鎷�
+	pid->Perror = pid->NowError;                  //P闁绘粠鍨垫俊顓㈠磻韫囨挻鈻曢柡鍕靛灠缂嶅宕滃鍛剨鐎归潻鎷�
     if(fabs(pid->NowError)<integral_apart_val)
-	    pid->Ierror += pid->NowError;                 //I閻滎垵濡崑蹇撴▕閺勵垯绗傞悽闈涙倵娑撯偓閻╁瓨瀵旂紒顓炲煂閻滄澘婀惃鍕焊瀹革拷
+	    pid->Ierror += pid->NowError;                 //I闁绘粠鍨垫俊顓㈠磻韫囨挻鈻曢柡鍕靛灟缁楀倿鎮介棃娑欏€靛☉鎾亾闁烩晛鐡ㄧ€垫梻绱掗鐐茬厒闁绘粍婢樺﹢顏堟儍閸曨偂鐒婄€归潻鎷�
     else pid->Ierror = 0;
-	pid->Derror = pid->NowError - pid->LastError; //D閻滎垵濡崑蹇撴▕閺勵垰缍嬮崜宥呬焊瀹割喕绗屾稉濠冾偧閸嬪繐妯婇惃鍕▕閸婄》绱濋崡鍐蹭焊瀹割喖顤冮柌锟�
-	pid->LastError = pid->NowError;               //閺囧瓨鏌婇崑蹇撴▕
-	//闂勬劕鍩楃粔顖氬瀻閸樺棗褰堕崑蹇撴▕
+	pid->Derror = pid->NowError - pid->LastError; //D闁绘粠鍨垫俊顓㈠磻韫囨挻鈻曢柡鍕靛灠缂嶅宕滃鍛剨鐎瑰壊鍠曠粭灞剧▔婵犲喚鍋ч柛瀣箰濡﹪鎯冮崟顐ｂ枙闁稿﹦銆嬬槐婵嬪础閸愯弓鐒婄€瑰壊鍠栭·鍐煂閿燂拷
+	pid->LastError = pid->NowError;               //闁哄洤鐡ㄩ弻濠囧磻韫囨挻鈻�
+	//闂傚嫭鍔曢崺妤冪矓椤栨艾鐎婚柛妯烘瑜板爼宕戣箛鎾粹枙
 	if( pid->Ierror >= pid->IerrorLim) pid->Ierror =  pid->IerrorLim;
 	else if( pid->Ierror <= -pid->IerrorLim)  pid->Ierror =  -pid->IerrorLim;
-	//PID閸氬嫮骞嗛懞鍌濈翻閸戞椽鍣�
+	//PID闁告艾瀚獮鍡涙嚍閸屾繄缈婚柛鎴炴そ閸ｏ拷
 	pid->Pout = pid->Kp * pid->Perror;
 	pid->Iout = pid->Ki * pid->Ierror;
 	pid->Dout = pid->Kd * pid->Derror;
-	//PID閹槒绶崙娲櫤
+	//PID闁诡剚妲掔欢顓㈠礄濞差亜娅�
 	pid->PIDout = pid->Pout + pid->Iout + pid->Dout;
-	//闂勬劕鍩桺ID閹槒绶崙娲櫤
+	//闂傚嫭鍔曢崺妗篒D闁诡剚妲掔欢顓㈠礄濞差亜娅�
 	if(pid->PIDout > pid->PIDoutMAX) pid->PIDout = pid->PIDoutMAX;
 	else if(pid->PIDout < -pid->PIDoutMAX) pid->PIDout = -pid->PIDoutMAX;
 }
 /**
- * @brief   PID閸欏倹鏆熼崚婵嗩潗閸栨牭绱濋崣顖欎簰閺€鎯ф躬閸掓繂顫愰崠鏍у毐閺侀鑵戦敍灞肩瘍閸欘垯浜掗弨鎯ф躬瀵邦亞骞嗛柌锟�
+ * @brief   PID闁告瑥鍊归弳鐔煎礆濠靛棭娼楅柛鏍ㄧ壄缁辨繈宕ｉ娆庣鞍闁衡偓閹勮含闁告帗绻傞～鎰板礌閺嵮冩瘣闁轰線顣﹂懙鎴︽晬鐏炶偐鐦嶉柛娆樺灟娴滄帡寮ㄩ幆褎韬€甸偊浜為獮鍡涙煂閿燂拷
  * @param 	PID_AbsoluteType *pid
  * @param   float kp
  * @param   float ki
@@ -248,7 +248,7 @@ void pid_abs_param_init(s_pid_absolute_t *pid, float kp, float ki, float kd, flo
 	pid->PIDoutMAX = MaxOutCur;
 }
 /**
- * @brief   PID閸欏倹鏆熺挧瀣偓纭风礉閸欘垯浜掗弨鎯ф躬閸掓繂顫愰崠鏍у毐閺侀鑵戦敍灞肩瘍閸欘垯浜掗弨鎯ф躬瀵邦亞骞嗛柌宀嬬礉閹存垹鏁ら弶銉︽杹閸掓澘鎯婇悳顖炲櫡鐠嬪啳鐦崣鍌涙殶
+ * @brief   PID闁告瑥鍊归弳鐔烘導鐎ｎ亖鍋撶涵椋庣闁告瑯鍨禍鎺楀绩閹勮含闁告帗绻傞～鎰板礌閺嵮冩瘣闁轰線顣﹂懙鎴︽晬鐏炶偐鐦嶉柛娆樺灟娴滄帡寮ㄩ幆褎韬€甸偊浜為獮鍡涙煂瀹€瀣闁瑰瓨鍨归弫銈夊级閵夛附鏉归柛鎺撴緲閹﹪鎮抽鐐叉閻犲鍟抽惁顖炲矗閸屾稒娈�
  * @param 	PID_AbsoluteType *pid
  * @param   float kp
  * @param   float ki
@@ -267,7 +267,7 @@ void pid_abs_evaluation(s_pid_absolute_t *pid, float kp, float ki, float kd, flo
 }
 
 /**
- * @brief   閸楁洜骞哖ID
+ * @brief   闁告娲滈獮鍝朓D
  * @param 	s_pid_absolute_t *single_pid
  * @param   float get
  * @param   float targeti		
@@ -284,7 +284,7 @@ int16_t motor_single_loop_PID(s_pid_absolute_t *single_pid , float target , floa
 	return pid_output;
 }
 /**
- * @brief   娑撹尙楠嘝ID
+ * @brief   濞戞捁灏欐鍢滻D
  * @param 	s_pid_absolute_t *pos_pid
  * @param   s_pid_absolute_t *spd_pid
  * @param   float externGet
@@ -309,7 +309,7 @@ float motor_double_loop_PID(s_pid_absolute_t *pos_pid, s_pid_absolute_t *spd_pid
 	return pid_output;
 }
 /**
- * @brief 娑撹尙楠嘝ID(闁喎瀹抽悳顖溞濋崚鍡楀瀻缁傦拷)
+ * @brief 濞戞捁灏欐鍢滻D(闂侇偆鍠庣€规娊鎮抽婧炴繈宕氶崱妤€鐎荤紒鍌︽嫹)
  * @param s_pid_absolute_t *pos_pid
  * @param s_pid_absolute_t *spd_pid
  * @param float externGet

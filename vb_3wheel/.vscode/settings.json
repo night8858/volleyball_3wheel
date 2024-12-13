@@ -55,5 +55,26 @@
   "C_Cpp_Runner.useLeakSanitizer": false,
   "C_Cpp_Runner.showCompilationTime": false,
   "C_Cpp_Runner.useLinkTimeOptimization": false,
-  "C_Cpp_Runner.msvcSecureNoWarnings": false
+  "C_Cpp_Runner.msvcSecureNoWarnings": false,
+  "files.associations": {
+    "test_task.h": "c",
+    "struct_typedef.h": "c",
+    "bsp_imu_pwm.h": "c",
+    "bsp_buzzer.h": "c",
+    "cmath": "c",
+    "can.h": "c",
+    "remote_control.h": "c",
+    "monitor_task.h": "c",
+    "monitor.h": "c",
+    "freertos.h": "c",
+    "main.h": "c",
+    "chassis.h": "c",
+    "pid.h": "c",
+    "can_recv.h": "c",
+    "user_lib.h": "c",
+    "cmsis_os.h": "c",
+    "bsp_usart.h": "c",
+    "variables.h": "c",
+    "bat_control.h": "c"
+  }
 }

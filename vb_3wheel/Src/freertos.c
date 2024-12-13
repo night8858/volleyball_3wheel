@@ -53,7 +53,7 @@ osThreadId led_RGB_flow_handle;
 /* USER CODE BEGIN Variables */
 
 /* USER CODE END Variables */
-osThreadId testHandle;
+osThreadId deBUG_TaskHandle;
 osThreadId LEDTaskHandle;
 osThreadId INSTaskHandle;
 osThreadId ChassisTaskHandle;
@@ -65,7 +65,7 @@ osThreadId functional_zoneHandle;
    
 /* USER CODE END FunctionPrototypes */
 
-void test_task(void const * argument);
+void debug_task(void const * argument);
 void led_RGB_flow_task(void const * argument);
 void INS_task(void const * argument);
 void chassis_task(void const * argument);
@@ -133,9 +133,9 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* definition and creation of test */
-  osThreadDef(test, test_task, osPriorityNormal, 0, 128);
-  testHandle = osThreadCreate(osThread(test), NULL);
+  /* definition and creation of deBUG_Task */
+  osThreadDef(deBUG_Task, debug_task, osPriorityNormal, 0, 128);
+  deBUG_TaskHandle = osThreadCreate(osThread(deBUG_Task), NULL);
 
   /* definition and creation of LEDTask */
   osThreadDef(LEDTask, led_RGB_flow_task, osPriorityAboveNormal, 0, 256);
@@ -168,22 +168,22 @@ void MX_FREERTOS_Init(void) {
 
 }
 
-/* USER CODE BEGIN Header_test_task */
+/* USER CODE BEGIN Header_debug_task */
 /**
-  * @brief  Function implementing the test thread.
-  * @param  argument: Not used 
+  * @brief  Function implementing the deBUG_Task thread.
+  * @param  argument: Not used
   * @retval None
   */
-/* USER CODE END Header_test_task */
-__weak void test_task(void const * argument)
+/* USER CODE END Header_debug_task */
+__weak void debug_task(void const * argument)
 {
-  /* USER CODE BEGIN test_task */
+  /* USER CODE BEGIN debug_task */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END test_task */
+  /* USER CODE END debug_task */
 }
 
 /* USER CODE BEGIN Header_led_RGB_flow_task */
