@@ -28,6 +28,7 @@
 "ins_task\variables.o"
 "ins_task\bat_control.o"
 "ins_task\monitor.o"
+"ins_task\sensor.o"
 "ins_task\user_lib.o"
 "ins_task\mahonyahrs.o"
 "ins_task\pid.o"

@@ -50,7 +50,7 @@ void start_Monitor(void)
 	startFPS.DM4340_M2				= FPS.DM4340_M2;
 	startFPS.DM4340_M3				= FPS.DM4340_M3;
 	startFPS.Pitch_DM8006 	        = FPS.Pitch_DM8006;
-	startFPS.Striker_HT04			= FPS.Striker_HT04;
+	startFPS.Striker_3508			= FPS.Striker_3508;
 	startFPS.PC				        = FPS.PC;
 	startFPS.board_imu				= FPS.board_imu;
     startFPS.dbus		            = FPS.dbus;    
@@ -72,7 +72,7 @@ void final_Monitor(void)
     finalFPS.DM4340_M2          = FPS.DM4340_M2         - startFPS.DM4340_M2;
     finalFPS.DM4340_M3          = FPS.DM4340_M3         - startFPS.DM4340_M3;
     finalFPS.Pitch_DM8006       = FPS.Pitch_DM8006      - startFPS.Pitch_DM8006;
-    finalFPS.Striker_HT04        = FPS.Striker_HT04     - startFPS.Striker_HT04;
+    finalFPS.Striker_3508        = FPS.Striker_3508     - startFPS.Striker_3508;
     finalFPS.PC                 = FPS.PC                - startFPS.PC;
 	
  }

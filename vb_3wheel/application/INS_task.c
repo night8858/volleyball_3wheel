@@ -34,10 +34,12 @@
 #include "pid.h"
 #include "bsp_usart.h"
 #include "chassis.h"
+#include "Monitor.h"
 
 #include "MahonyAHRS.h"
 #include "math.h"
 
+extern  s_task_flags task_flags ;
 
 #define IMU_temp_PWM(pwm)  imu_pwm_set(pwm)                    //pwm给定
 
@@ -612,6 +614,16 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
         }
     }
 
+    //处理球拍初始位置使用
+    else if(GPIO_Pin == E3Z_L61_Pin)
+    {
+
+        if(task_flags.sensor_is_blocked == 0)
+        task_flags.sensor_is_blocked = 1;
+        else if (task_flags.sensor_is_blocked == 1)
+        task_flags.sensor_is_blocked = 0;
+
+    }
 
 }
 

@@ -12,7 +12,7 @@ extern CAN_HandleTypeDef hcan2;
 extern RC_ctrl_t rc_ctrl;
 extern s_FPS_monitor FPS;
 
-motor_measure_t motor_Date[8]; // RM电机回传数据结构体
+extern s_Dji_motor_data_t motor_Date[4]; // RM电机回传数据结构体
 
 extern s_motor_data_t DM4340_Date[3]; // DM4340回传数据结构体
 extern s_motor_data_t DM8006_Date[1]; // DM4340回传数据结构体
@@ -163,15 +163,15 @@ void HT04_motor_PID_Control(CAN_HandleTypeDef *hcan, uint32_t id, float _torq)
 void MD4340_motor_PID_Control(CAN_HandleTypeDef *hcan, uint32_t id, float _torq)
 {
     uint8_t txData[8];
-    //uint16_t pos_tmp, vel_tmp, kp_tmp, kd_tmp, tor_tmp; // 声明临时变量
+    // uint16_t pos_tmp, vel_tmp, kp_tmp, kd_tmp, tor_tmp; // 声明临时变量
     uint16_t tor_tmp;
     float _pos, _vel, _KP, _KD = {0};
 
     //_pos = fminf(fmaxf(DM4340_P_MIN, _pos), DM4340_P_MAX);
-    //pos_tmp = float_to_uint(_pos, DM4340_P_MIN, DM4340_P_MAX, 16);
-    //vel_tmp = float_to_uint(_vel, DM4340_V_MIN, DM4340_V_MAX, 12);
-    //kp_tmp = float_to_uint(_KP, DM4340_KP_MIN, DM4340_KP_MAX, 12);
-    //kd_tmp = float_to_uint(_KD, DM4340_KD_MIN, DM4340_KD_MAX, 12);
+    // pos_tmp = float_to_uint(_pos, DM4340_P_MIN, DM4340_P_MAX, 16);
+    // vel_tmp = float_to_uint(_vel, DM4340_V_MIN, DM4340_V_MAX, 12);
+    // kp_tmp = float_to_uint(_KP, DM4340_KP_MIN, DM4340_KP_MAX, 12);
+    // kd_tmp = float_to_uint(_KD, DM4340_KD_MIN, DM4340_KD_MAX, 12);
     tor_tmp = float_to_uint(_torq, DM4340_T_MIN, DM4340_T_MAX, 12);
 
     CAN_DMmsg_TxHeader.StdId = id;
@@ -197,15 +197,15 @@ void MD4340_motor_PID_Control(CAN_HandleTypeDef *hcan, uint32_t id, float _torq)
 void DM8006_motor_PID_Control(CAN_HandleTypeDef *hcan, uint32_t id, float _torq)
 {
     uint8_t txData[8];
-    //uint16_t pos_tmp, vel_tmp, kp_tmp, kd_tmp, tor_tmp; // 声明临时变量
+    // uint16_t pos_tmp, vel_tmp, kp_tmp, kd_tmp, tor_tmp; // 声明临时变量
     uint16_t tor_tmp;
     float _pos, _vel, _KP, _KD = {0};
 
     //_pos = fminf(fmaxf(DM4340_P_MIN, _pos), DM4340_P_MAX);
-    //pos_tmp = float_to_uint(_pos, DM8006_P_MIN, DM8006_P_MAX, 16);
-    //vel_tmp = float_to_uint(_vel, DM8006_V_MIN, DM8006_V_MAX, 12);
-    //kp_tmp = float_to_uint(_KP, DM8006_KP_MIN, DM8006_KP_MAX, 12);
-    //kd_tmp = float_to_uint(_KD, DM8006_KD_MIN, DM8006_KD_MAX, 12);
+    // pos_tmp = float_to_uint(_pos, DM8006_P_MIN, DM8006_P_MAX, 16);
+    // vel_tmp = float_to_uint(_vel, DM8006_V_MIN, DM8006_V_MAX, 12);
+    // kp_tmp = float_to_uint(_KP, DM8006_KP_MIN, DM8006_KP_MAX, 12);
+    // kd_tmp = float_to_uint(_KD, DM8006_KD_MIN, DM8006_KD_MAX, 12);
     tor_tmp = float_to_uint(_torq, DM8006_T_MIN, DM8006_T_MAX, 12);
 
     CAN_DMmsg_TxHeader.StdId = id;
@@ -224,7 +224,6 @@ void DM8006_motor_PID_Control(CAN_HandleTypeDef *hcan, uint32_t id, float _torq)
     HAL_CAN_AddTxMessage(hcan, &CAN_DMmsg_TxHeader, txData, (uint32_t *)CAN_TX_MAILBOX0);
 }
 
-
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
     CAN_RxHeaderTypeDef rx_header_can1, rx_header_can2;
@@ -237,28 +236,39 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
         switch (rx_header_can1.StdId)
         {
         case CAN_3508_M1_ID:
-        case CAN_3508_M2_ID:
-        case CAN_3508_M3_ID:
-        case CAN_3508_M4_ID:
-
         {
-            static uint8_t i = 0;
-            i = rx_header_can1.StdId - CAN_3508_M1_ID;
-            get_motor_measure(&motor_Date[i], rx_data_can1);
-            if (i == 0)      {FPS.M3508_M1++;}
-            else if (i == 1) {FPS.M3508_M2++;}
-            else if (i == 2) {FPS.M3508_M3++;}
+			motor_Date[0].back_position    =		rx_data_can1[0]<<8 | rx_data_can1[1];
+			motor_Date[0].back_motor_speed =		rx_data_can1[2]<<8 | rx_data_can1[3];
+			motor_Date[0].back_current     = 	    rx_data_can1[4]<<8 | rx_data_can1[5];
+            continue_motor_pos(&motor_Date[0]);
+            FPS.M3508_M1++;
             break;
         }
-
-        case 0:
+        case CAN_3508_M2_ID:
         {
-            HT04_Data.id = rx_data_can1[0] & 0xFF;
-            HT04_CanReceive(&HT04_Data, rx_data_can1);
-
-            HT04_Data.esc_back_position_last = HT04_Data.esc_back_position;
-            HT04_Data.real_angle = HT04_Data.esc_back_position * 57.29577951308f;
-            FPS.Striker_HT04++;
+            motor_Date[1].back_position    =		rx_data_can1[0]<<8 | rx_data_can1[1];
+			motor_Date[1].back_motor_speed =		rx_data_can1[2]<<8 | rx_data_can1[3];
+			motor_Date[1].back_current     = 	    rx_data_can1[4]<<8 | rx_data_can1[5];
+            continue_motor_pos(&motor_Date[1]);
+            FPS.M3508_M2++;
+            break;
+        }
+        case CAN_3508_M3_ID:
+        {
+			motor_Date[2].back_position    =		rx_data_can1[0]<<8 | rx_data_can1[1];
+			motor_Date[2].back_motor_speed =		rx_data_can1[2]<<8 | rx_data_can1[3];
+			motor_Date[2].back_current     = 	    rx_data_can1[4]<<8 | rx_data_can1[5];
+            continue_motor_pos(&motor_Date[2]);
+            FPS.M3508_M3++;
+            break;
+        }
+        case CAN_3508_M4_ID:
+        {
+            motor_Date[3].back_position    =		rx_data_can1[0]<<8 | rx_data_can1[1];
+			motor_Date[3].back_motor_speed =		rx_data_can1[2]<<8 | rx_data_can1[3];
+			motor_Date[3].back_current     = 	    rx_data_can1[4]<<8 | rx_data_can1[5];
+            continue_motor_pos(&motor_Date[3]);            
+            FPS.Striker_3508++;
             break;
         }
         default:
@@ -291,7 +301,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
         {
             DM4340_Date[1].id = (rx_data_can2[0]) & 0x0F;
             MD_CanReceive(&DM4340_Date[1], rx_data_can2);
-            
+
             DM4340_Date[1].esc_back_position_last = DM4340_Date[1].esc_back_position;
             DM4340_Date[1].real_angle = DM4340_Date[1].esc_back_position * 57.29577951308f;
             FPS.DM4340_M2++;
@@ -324,12 +334,6 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
         }
         }
     }
-}
-
-void encode_limited_2_unlimited(s_motor_data_t *motor)
-{
-    motor->serial_angle = motor->circle_num * 360 + motor->real_angle;
-
 }
 
 // 达妙电机的数据解包和赋值
@@ -386,12 +390,36 @@ void HT04_CanReceive(s_motor_data_t *motor, uint8_t *RxData)
     if (motor->id == 0x50)
     {
         motor->esc_back_position = uint_to_float(p_int, HT04_P_MIN, HT04_P_MAX, 16); //
-        motor->esc_back_speed = uint_to_float(v_int, HT04_V_MIN, HT04_V_MAX, 12);   //
-        motor->esc_back_current = uint_to_float(i_int, HT04_T_MIN, HT04_T_MAX, 12); //
+        motor->esc_back_speed = uint_to_float(v_int, HT04_V_MIN, HT04_V_MAX, 12);    //
+        motor->esc_back_current = uint_to_float(i_int, HT04_T_MIN, HT04_T_MAX, 12);  //
     }
 }
 
-
+//dji电机连续编码器数据处理 
+void continue_motor_pos(s_Dji_motor_data_t *s_motor)
+{
+    if (s_motor->is_pos_ready == 1) // 如果电机第一次上电后记录了那时的电机编码器值并将预备标志位置一了的话，进入此判断
+    {
+        // 如果（当前电机返回值-上一次电机返回值）值大于4096，因为电机不可能在几毫秒内转过半圈
+        if (s_motor->back_position - s_motor->back_pos_last > 4096)
+        {
+            s_motor->circle_num--; // 圈数--
+        }
+        else if (s_motor->back_position - s_motor->back_pos_last < -4096) // 同上，只不过方向是反的
+        {
+            s_motor->circle_num++; // 圈数++
+        }
+    }
+    else
+    {
+        s_motor->target_pos = s_motor->back_position; // 如果电机预备标志位不为1，也就是电机第一次上电
+        s_motor->is_pos_ready = 1;                    // 电机预备标志位赋值为一，也就是说电机已经准备好
+    }
+    s_motor->back_pos_last = s_motor->back_position;                                // 将上一次进入该函数的电机返回值赋值，方便计算连续值
+    s_motor->serial_position = s_motor->back_position + s_motor->circle_num * 8191; // 返回的电机连续编码器值
+    s_motor->back_motor_ang = s_motor->back_position / 8191.0f * 360.0f;            // 返回的电机绝对角度
+    s_motor->serial_motor_ang = s_motor->serial_position / 8191.0f * 360.0f;        // 返回的电机连续角度
+}
 
 typedef union
 {
@@ -455,23 +483,23 @@ static float uint_to_float(int x_int, float x_min, float x_max, int bits)
     return ((float)x_int) * span / ((float)((1 << bits) - 1)) + offset;
 }
 
-const motor_measure_t *get_3508_M1_motor_measure_point(void)
+const s_Dji_motor_data_t *get_3508_M1_motor_measure_point(void)
 {
     return &motor_Date[0];
 }
-const motor_measure_t *get_3508_M2_motor_measure_point(void)
+const s_Dji_motor_data_t *get_3508_M2_motor_measure_point(void)
 {
     return &motor_Date[1];
 }
-const motor_measure_t *get_3508_M3_motor_measure_point(void)
+const s_Dji_motor_data_t *get_3508_M3_motor_measure_point(void)
 {
     return &motor_Date[2];
 }
-const motor_measure_t *get_3508_M4_motor_measure_point(void)
+const s_Dji_motor_data_t *get_3508_M4_motor_measure_point(void)
 {
     return &motor_Date[3];
 }
-const motor_measure_t *get_6020_M1_motor_measure_point(void)
+/* const motor_measure_t *get_6020_M1_motor_measure_point(void)
 {
     return &motor_Date[4];
 }
@@ -486,4 +514,4 @@ const motor_measure_t *get_6020_M3_motor_measure_point(void)
 const motor_measure_t *get_6020_M4_motor_measure_point(void)
 {
     return &motor_Date[7];
-}
+} */

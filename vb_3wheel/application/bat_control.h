@@ -20,13 +20,13 @@
 #define DM_MOTOR_t_ff   -1.2f//-1.3f前馈力矩
 
 //控球拍（bat）的PID参数//
-#define DM4340_ANGLE_PID_KP   1.3f    //
+#define DM4340_ANGLE_PID_KP   1.4f    //
 #define DM4340_ANGLE_PID_KI   0.0f    //
-#define DM4340_ANGLE_PID_KD   0.0f
+#define DM4340_ANGLE_PID_KD   4.0f
 #define DM4340_ANGLE_PID_MAX_IOUT 100.0f //  
-#define DM4340_ANGLE_PID_MAX_OUT 10.0f //  
+#define DM4340_ANGLE_PID_MAX_OUT 25.0f //  
 
-#define DM4340_SPEED_PID_KP   1.0f    //
+#define DM4340_SPEED_PID_KP   0.4f    //
 #define DM4340_SPEED_PID_KI   0.0f    //
 #define DM4340_SPEED_PID_KD   0.0f
 #define DM4340_SPEED_PID_MAX_IOUT 100.0f //  
@@ -61,6 +61,26 @@
 #define HT04_SPEED_PID_KD   0.0f
 #define HT04_SPEED_PID_MAX_IOUT 1000.0f //  
 #define HT04_SPEED_PID_MAX_OUT 30.0f // 
+
+
+#define STRIKER_3508_ANGLE_PID_KP   13.0f    //
+#define STRIKER_3508_ANGLE_PID_KI   0.0f    //
+#define STRIKER_3508_ANGLE_PID_KD   2.0f    //
+#define STRIKER_3508_ANGLE_PID_MAX_IOUT 12000.0f //  
+#define STRIKER_3508_ANGLE_PID_MAX_OUT 18000.0f //  
+
+#define STRIKER_3508_SPEED_PID_KP   1.5f    //
+#define STRIKER_3508_SPEED_PID_KI   0.0f    //
+#define STRIKER_3508_SPEED_PID_KD   0.0f
+#define STRIKER_3508_SPEED_PID_MAX_IOUT 12000.0f //  
+#define STRIKER_3508_SPEED_PID_MAX_OUT 18000.0f // 
+
+#define STRIKER_3508_SPEED_INIT_PID_KP   21.0f    //
+#define STRIKER_3508_SPEED_INIT_PID_KI   3.5f    //
+#define STRIKER_3508_SPEED_INIT_PID_KD   0.0f
+#define STRIKER_3508_SPEED_INIT_PID_MAX_IOUT 8000.0f //  
+#define STRIKER_3508_SPEED_INIT_PID_MAX_OUT 12000.0f // 
+
 
 //过高5.6
 
@@ -138,6 +158,11 @@ typedef struct
 
     s_pid_absolute_t HT_Motor_PID_speed;
     s_pid_absolute_t HT_Motor_PID_angle;
+    
+    s_pid_absolute_t STRIKER_3508_PID_speed;
+    s_pid_absolute_t STRIKER_3508_PID_angle;
+
+    s_pid_absolute_t STRIKER_3508_INIT_PID_speed;
 
     top_inverse_calculation_angle top_inverse_angle;
     s_Data_t pos_angle_data;
@@ -166,6 +191,7 @@ typedef struct
     float real_z;
     float real_pitch;
     
+    float striker_start_angle;
     float set_striker_angle;
     
 }bat_control_t;

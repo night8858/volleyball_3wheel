@@ -17,8 +17,14 @@
 #define M3505_MOTOR_SPEED_PID_KP 14.0f
 #define M3505_MOTOR_SPEED_PID_KI 1.0f
 #define M3505_MOTOR_SPEED_PID_KD 0.0f
-#define M3505_MOTOR_SPEED_PID_MAX_OUT 4000.0f
-#define M3505_MOTOR_SPEED_PID_MAX_IOUT 14000.0f
+#define M3505_MOTOR_SPEED_PID_MAX_OUT 14000.0f
+#define M3505_MOTOR_SPEED_PID_MAX_IOUT 4000.0f
+
+#define M3505_MOTOR_ANGLE_PID_KP 1.0f
+#define M3505_MOTOR_ANGLE_PID_KI 0.0f
+#define M3505_MOTOR_ANGLE_PID_KD 0.0f
+#define M3505_MOTOR_ANGLE_PID_MAX_OUT 14000.0f
+#define M3505_MOTOR_ANGLE_PID_MAX_IOUT 4000.0f
 
 #define CHASSIS_ANGLE_PID_KP -5000.0f
 #define CHASSIS_ANGLE_PID_KI 0.0f
@@ -127,9 +133,13 @@ typedef struct
 typedef struct
 {
 
-    const motor_measure_t *chassis_motor_measure; // 电机数据结构体
+    const s_Dji_motor_data_t *chassis_motor_measure; // 电机数据结构体
     s_pid_absolute_t M3508_pid_speed;
+    s_pid_absolute_t M3508_pid_angle;  
     uint16_t offset_ecd;
+
+    int64_t serial_position;//电机连续编码值（刻度）
+    int64_t serial_position_set; // 电机连续编码值设定值
 
     float motor_speed;
     float motor_speed_set;
@@ -170,6 +180,8 @@ typedef struct
     int16_t chassis_vx_ch;
     int16_t chassis_vy_ch;
     int16_t chassis_wz_ch;
+
+    int64_t chassis_keep_position[3]; // 底盘连续编码值（刻度）
 
     fp32 chassis_yaw_set;
     fp32 chassis_yaw;
