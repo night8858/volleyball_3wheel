@@ -27,7 +27,7 @@ extern s_robo_Mode_Setting robot_StateMode;
 
 void chassis_task(void const *argument)
 {
-    vTaskDelay(4000);
+    vTaskDelay(3000);
 
     motor_init(&motor_control);
 

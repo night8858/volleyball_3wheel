@@ -105,6 +105,9 @@
     "monitor_task.h": "c",
     "bat_control_task.h": "c",
     "moniker.h": "c",
-    "debug_task.h": "c"
+    "debug_task.h": "c",
+    "math.h": "c",
+    "queue": "c",
+    "random": "c"
   }
 }

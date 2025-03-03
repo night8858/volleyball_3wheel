@@ -187,6 +187,8 @@ void motor_control_send(chassis_control_t *control_loop)
     // control_loop->chassis_motor.M3508[1].current_set += 700;
     // control_loop->chassis_motor.M3508[2].current_set += 700;
     //  发送给电机数据
+
+    //此处出现的4号电机是
     CAN_cmd_3508(control_loop->chassis_motor.M3508[0].current_set, control_loop->chassis_motor.M3508[1].current_set, control_loop->chassis_motor.M3508[2].current_set, motor_Date[3].out_current);
 }
 
@@ -248,7 +250,7 @@ void chassis_movement_calc(chassis_control_t *chassis_control)
     // 设置底盘控制的角度
     chassis_control->chassis_yaw_set = chassis_control->chassis_yaw;
     // 计算底盘角度差
-    delat_angle = rad_format(chassis_control->chassis_yaw_set - chassis_control->chassis_yaw_last);
+    delat_angle = chassis_control->chassis_yaw_set - chassis_control->chassis_yaw_last;
 
     if (robot_StateMode.roboMode == 3)
     {

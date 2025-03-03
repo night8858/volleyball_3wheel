@@ -28,7 +28,7 @@ extern s_robo_Mode_Setting robot_StateMode ;
 
 void functional_zone_task(void const *argument)
 {
-    vTaskDelay(1000);
+    vTaskDelay(3000);
     ///////////////初始化函数///////////////
     bat_motor_Init(&bat_control);
     // ball_track_pid_init();

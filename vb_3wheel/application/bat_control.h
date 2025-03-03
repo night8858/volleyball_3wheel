@@ -30,7 +30,7 @@
 #define DM4340_SPEED_PID_KI   0.0f    //
 #define DM4340_SPEED_PID_KD   0.0f
 #define DM4340_SPEED_PID_MAX_IOUT 100.0f //  
-#define DM4340_SPEED_PID_MAX_OUT 10.0f //   给10是限制扭矩输出，4340只有9n的额定
+#define DM4340_SPEED_PID_MAX_OUT 9.0f //   给10是限制扭矩输出，4340只有9n的额定
 
 
 
@@ -207,7 +207,6 @@ float float_constrain(float Value, float minValue, float maxValue);
 void delta_arm_inverse_calculation(struct Angle *angle, float x, float y, float z);
 void Forward_Kinematics(struct Point *Point, float theta1, float theta2, float theta3);
 
-bool_t auto_hit_ball_loop(bat_control_t *bat_control);
 float CalDistance2Point(struct Point point1, struct Point point2);
 struct Point GetPointInLine(struct Point currentP, struct Point desiredP, float t);
 

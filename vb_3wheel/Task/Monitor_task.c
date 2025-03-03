@@ -47,6 +47,9 @@ void Monitor_task(void const *argument)
 		monitorLastWakeTime = xTaskGetTickCount();
 		vTaskDelayUntil(&monitorLastWakeTime, 1000);//在此阻塞1000ms，FPS依旧在加，startFPS赋值被阻塞，以便下一次计算差值
 		final_Monitor();//计算每秒进入CAN的次数
+        mode_state_check();
         //osDelay(2);
+        vTaskDelayUntil(&monitorLastWakeTime, 5);//200Hz
+
     }
 }

@@ -4,7 +4,6 @@
 #include "remote_control.h"
 #include "bsp_buzzer.h"
 
-// 本进程负责确定机器人控制状态，同时监控所有的错误
 
 s_FPS_monitor FPS = {0};
 s_FPS_monitor startFPS = {0};
@@ -17,10 +16,24 @@ extern s_task_flags task_flags ;
 extern s_robo_Mode_Setting robot_StateMode ;
 
 
-
-static void mode_state_check(void)
+ void mode_state_check(void)
 {
-
+    if (finalFPS.dbus < 40)
+    {
+        robot_StateMode.roboState = DBUS_ERROR;
+        return;
+    }
+    else if ((finalFPS.M3508_M1 < 500)  || (finalFPS.M3508_M2 < 500)  || (finalFPS.M3508_M3 < 500)  ||
+             (finalFPS.DM4340_M1 < 300) || (finalFPS.DM4340_M2 < 300) || (finalFPS.DM4340_M3 < 300) ||  
+             (finalFPS.Pitch_DM8006 < 300) || (finalFPS.Striker_3508 < 500))
+    {
+        robot_StateMode.roboState = MOTOR_ERROR;
+        return;
+    }else
+    {
+        robot_StateMode.roboState = NORMAL;
+    }
+    
 }
 
 

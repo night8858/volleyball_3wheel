@@ -35,19 +35,19 @@ void debug_task(void const *argument)
     {
         debugLastWakeTime = xTaskGetTickCount();
 
-       //uart_dma_printf(&huart1, "%4.3f ,%4.3f ,%4.3f ,%4.3f, %4.3f ,%4.3f\n",
-       //                DM4340_Date[1].real_angle,
-       //                DM4340_Date[1].target_angle,
-       //                DM4340_Date[2].esc_back_position,
-       //                bat_control.pos_angle_data.BallCurrentPoint.x,
-       //                bat_control.pos_angle_data.BallCurrentPoint.y,
-       //                bat_control.pos_angle_data.BallCurrentPoint.z);
+       uart_dma_printf(&huart1, "%4.3f ,%4.3f ,%4.3f ,%4.3f, %4.3f ,%4.3f\n",
+                      DM4340_Date[0].real_angle,
+                      DM4340_Date[1].real_angle,
+                      DM4340_Date[2].real_angle,
+                      bat_control.pos_angle_data.CurrentPoint.x,
+                      bat_control.pos_angle_data.CurrentPoint.y,
+                      bat_control.pos_angle_data.CurrentPoint.z);
 
-        uart_dma_printf(&huart1, "%4.3d , %4.3f ,%4.3f ,%4.3f\n",
-                            motor_Date[3].back_motor_speed,
-                            motor_Date[3].target_motor_speed,
-                            motor_Date[3].serial_motor_ang,
-                            bat_control.striker_start_angle);
+        // uart_dma_printf(&huart1, "%4.3d , %4.3f ,%4.3f ,%4.3f\n",
+        //                     motor_Date[3].back_motor_speed,
+        //                     motor_Date[3].target_motor_speed,
+        //                     motor_Date[3].serial_motor_ang,
+        //                     bat_control.striker_start_angle);
         vTaskDelayUntil(&debugLastWakeTime, 5);//200Hz
     }
 }

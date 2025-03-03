@@ -15,7 +15,7 @@ typedef struct
     JUDGE_ERROR = 6,     // 裁判系统出错
     CAP_ERROR = 7,       // 电容控制板出错
     PC_ERROR = 8,        // PC出错
-    NOMAL = 9,           // 一切正常
+    NORMAL = 9,           // 一切正常
   } roboState;           // 机器人状态
 
   volatile enum roboMode {

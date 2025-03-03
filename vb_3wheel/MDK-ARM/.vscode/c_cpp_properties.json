@@ -130,13 +130,17 @@
                 "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\components\\devices",
                 "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\components\\support",
                 "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\Task",
+                "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\Middlewares\\ST\\STM32_USB_Device_Library\\Core\\Inc",
+                "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\Middlewares\\ST\\STM32_USB_Device_Library\\Class\\CDC\\Inc",
                 "D:\\D P J\\ARM\\ARMCC\\include",
                 "D:\\D P J\\ARM\\ARMCC\\include\\rw",
                 "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\MDK-ARM",
                 "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\Src",
                 "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\Drivers\\STM32F4xx_HAL_Driver\\Src",
                 "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\Middlewares\\Third_Party\\FreeRTOS\\Source",
-                "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\Middlewares\\Third_Party\\FreeRTOS\\Source\\portable\\MemMang"
+                "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\Middlewares\\Third_Party\\FreeRTOS\\Source\\portable\\MemMang",
+                "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\Middlewares\\ST\\STM32_USB_Device_Library\\Core\\Src",
+                "d:\\cubeMX f\\volleyball_3wheel\\vb_3wheel\\Middlewares\\ST\\STM32_USB_Device_Library\\Class\\CDC\\Src"
             ],
             "defines": [
                 "USE_HAL_DRIVER",
