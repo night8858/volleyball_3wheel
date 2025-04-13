@@ -5,19 +5,6 @@
 typedef struct
 {
 
-  volatile enum roboState {
-    DEAD = 0,            // 机器人死亡
-    INITIALIZING = 1,    // 初始化
-    ON_PROCESSING = 2,   // 运行中
-    WELL_PROCESSING = 3, // 处理完毕
-    DBUS_ERROR = 4,      // 遥控器出错
-    MOTOR_ERROR = 5,     // 电机出错
-    JUDGE_ERROR = 6,     // 裁判系统出错
-    CAP_ERROR = 7,       // 电容控制板出错
-    PC_ERROR = 8,        // PC出错
-    NORMAL = 9,           // 一切正常
-  } roboState;           // 机器人状态
-
   volatile enum roboMode {
     MODE_STOP = 0,      // 停止模式
     MODE_ARTIFICAL = 1, // 人工模式
@@ -27,9 +14,27 @@ typedef struct
     ARTIFICAL_BAT = 4,     // 人工模式下，机器人球拍
     ARTIFICAL_STRIKER = 5, // 人工模式下，机器人击球杆
 
+    AUTO_SERVE_BALL = 6, // 自动模式下，机器人发球
+    AUTO_RECEIVE_BALL = 7, // 自动模式下，机器人接发球
+
+
   } roboMode; // 机器控制模式
 
 } s_robo_Mode_Setting;
+
+typedef struct
+{
+  volatile int8_t DBUS_ERROR;
+  volatile int8_t CHASSIS_MOTOR_ERROR;      // 电机错误标志位
+  volatile int8_t BAT_MOTOR_ERROR;
+  volatile int8_t Pitch_MOTOR_ERROR;
+  volatile int8_t Striker_MOTOR_ERROR;
+  volatile int8_t PC_ERROR;
+  volatile int8_t board_imu_ERROR;
+
+
+}roboError_flag_t;     // 机器人错误标志位标记结构体
+
 
 typedef struct
 {
@@ -38,6 +43,16 @@ typedef struct
   volatile uint8_t chassis_Init_flag;
   volatile uint8_t bat_control_Init_flag;
   volatile char sensor_is_blocked;
+  volatile uint8_t mode_switched_flag;    //模式切换标志位
+
+  volatile uint8_t bat_auto_hit_flag;                       //光电硬触发标志位，1为光电硬触发需要击球 ， 0为不需要击球
+  volatile uint8_t hit_ball_launch_flag;                    //球拍击球标志位用于判断运动阶段
+  volatile uint8_t bat_running_flag;                        //球拍击球标志位 ， 1为球拍正在运动 ， 0为球拍没有运动
+  volatile uint8_t ball_soaring_flag;                       //球被击起标志位 ， 1为球被击起过一次 ，0为球没有被击起过
+  volatile uint8_t ball_need_hit_flag;                      //需要发球标志位 ， 1为需要发球 ，0为不需要发球
+  volatile uint8_t hit_ball_chassis_move_flag;              //机器人底盘移动标志位用于判断运动阶段
+  volatile uint8_t hit_ball_chassis_stop_flag;              //机器人底盘stop标志位用于判断运动阶段
+  volatile uint8_t hit_ball_chassis_star_remenber_flag;     //机器人底盘stop标志位用于判断运动阶段
 
 } s_task_flags;
 
@@ -63,6 +78,6 @@ void robo_init_complete(void);
 void start_Monitor(void);
 void final_Monitor(void);
 
-void mode_switch(s_robo_Mode_Setting *robot_Mode);
+void mode_switch(void);
 
 #endif /* MONITOR_H_ */

@@ -34,6 +34,8 @@
 "ins_task\monitor.o"
 "ins_task\sensor.o"
 "ins_task\pc_interface.o"
+"ins_task\robot.o"
+"ins_task\tracking.o"
 "ins_task\user_lib.o"
 "ins_task\mahonyahrs.o"
 "ins_task\pid.o"

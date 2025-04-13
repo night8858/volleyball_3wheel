@@ -135,7 +135,7 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of deBUG_Task */
-  osThreadDef(deBUG_Task, debug_task, osPriorityNormal, 0, 128);
+  osThreadDef(deBUG_Task, debug_task, osPriorityNormal, 0, 256);
   deBUG_TaskHandle = osThreadCreate(osThread(deBUG_Task), NULL);
 
   /* definition and creation of LEDTask */
@@ -151,11 +151,11 @@ void MX_FREERTOS_Init(void) {
   ChassisTaskHandle = osThreadCreate(osThread(ChassisTask), NULL);
 
   /* definition and creation of Monitor_Task */
-  osThreadDef(Monitor_Task, Monitor_task, osPriorityAboveNormal, 0, 128);
+  osThreadDef(Monitor_Task, Monitor_task, osPriorityAboveNormal, 0, 256);
   Monitor_TaskHandle = osThreadCreate(osThread(Monitor_Task), NULL);
 
   /* definition and creation of functional_zone */
-  osThreadDef(functional_zone, functional_zone_task, osPriorityAboveNormal, 0, 512);
+  osThreadDef(functional_zone, functional_zone_task, osPriorityAboveNormal, 0, 1024);
   functional_zoneHandle = osThreadCreate(osThread(functional_zone), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */

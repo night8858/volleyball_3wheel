@@ -25,27 +25,29 @@
 
 extern bat_control_t bat_control;
 extern s_robo_Mode_Setting robot_StateMode ;
+extern volatile uint8_t robot_start_flag;        //机器人启动标志位
 
 void functional_zone_task(void const *argument)
 {
-    vTaskDelay(3000);
+    vTaskDelay(2000);
     ///////////////初始化函数///////////////
     bat_motor_Init(&bat_control);
-    // ball_track_pid_init();
     ///////////////初始化函数///////////////
+
+    robo_init_complete();
     static TickType_t 	batLastWakeTime;
     while (1)
     {
         // HT04_motor_PID_Control(&hcan1 , 0x50 , 0.0f);
         batLastWakeTime = xTaskGetTickCount();
 
-        taskENTER_CRITICAL();
+        // taskENTER_CRITICAL();
         bat_data_update(&bat_control);
-        mode_switch(&robot_StateMode);
-        top_RC_control_set(&bat_control);
+        mode_switch();
+        bat_action(&bat_control);
         motor_pid_clac(&bat_control);
         bat_motor_control(&bat_control);
-        taskEXIT_CRITICAL();
+        // taskEXIT_CRITICAL();
         
         vTaskDelayUntil(&batLastWakeTime, 2);//500Hz
 

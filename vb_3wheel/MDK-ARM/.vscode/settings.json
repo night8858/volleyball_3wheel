@@ -108,6 +108,14 @@
     "debug_task.h": "c",
     "math.h": "c",
     "queue": "c",
-    "random": "c"
+    "random": "c",
+    "stm32f407xx.h": "c",
+    "robot.h": "c",
+    "user_lib.h": "c",
+    "remote_control.h": "c",
+    "pid.h": "c",
+    "pc_interface.h": "c",
+    "cmath": "c",
+    "tracking.h": "c"
   }
 }

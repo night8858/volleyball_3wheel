@@ -24,7 +24,8 @@ static CAN_TxHeaderTypeDef RM6020_tx_message; // can_6020发送邮箱
 static CAN_TxHeaderTypeDef RM3508_tx_message; // can_3508发送邮箱RM
 
 static CAN_TxHeaderTypeDef CAN_DMstart_TxHeader;
-static CAN_TxHeaderTypeDef CAN_DMmsg_TxHeader;
+static CAN_TxHeaderTypeDef CAN_DM4340_msg_TxHeader;
+static CAN_TxHeaderTypeDef CAN_DM8006_msg_TxHeader;
 
 static CAN_TxHeaderTypeDef CAN_HTstart_TxHeader;
 static CAN_TxHeaderTypeDef CAN_HTmsg_TxHeader;
@@ -174,10 +175,10 @@ void MD4340_motor_PID_Control(CAN_HandleTypeDef *hcan, uint32_t id, float _torq)
     // kd_tmp = float_to_uint(_KD, DM4340_KD_MIN, DM4340_KD_MAX, 12);
     tor_tmp = float_to_uint(_torq, DM4340_T_MIN, DM4340_T_MAX, 12);
 
-    CAN_DMmsg_TxHeader.StdId = id;
-    CAN_DMmsg_TxHeader.IDE = CAN_ID_STD;
-    CAN_DMmsg_TxHeader.RTR = CAN_RTR_DATA;
-    CAN_DMmsg_TxHeader.DLC = 0x08;
+    CAN_DM4340_msg_TxHeader.StdId = id;
+    CAN_DM4340_msg_TxHeader.IDE = CAN_ID_STD;
+    CAN_DM4340_msg_TxHeader.RTR = CAN_RTR_DATA;
+    CAN_DM4340_msg_TxHeader.DLC = 0x08;
     txData[0] = 0;
     txData[1] = 0;
     txData[2] = 0;
@@ -187,7 +188,7 @@ void MD4340_motor_PID_Control(CAN_HandleTypeDef *hcan, uint32_t id, float _torq)
     txData[6] = ((0 & 0xf) << 4) | (tor_tmp >> 8);
     txData[7] = tor_tmp & 0xff;
 
-    HAL_CAN_AddTxMessage(hcan, &CAN_DMmsg_TxHeader, txData, (uint32_t *)CAN_TX_MAILBOX0);
+    HAL_CAN_AddTxMessage(hcan, &CAN_DM4340_msg_TxHeader, txData, (uint32_t *)CAN_TX_MAILBOX0);
 }
 
 /// @brief 使用pid输出力矩的方式控制，即电流环控制
@@ -208,10 +209,10 @@ void DM8006_motor_PID_Control(CAN_HandleTypeDef *hcan, uint32_t id, float _torq)
     // kd_tmp = float_to_uint(_KD, DM8006_KD_MIN, DM8006_KD_MAX, 12);
     tor_tmp = float_to_uint(_torq, DM8006_T_MIN, DM8006_T_MAX, 12);
 
-    CAN_DMmsg_TxHeader.StdId = id;
-    CAN_DMmsg_TxHeader.IDE = CAN_ID_STD;
-    CAN_DMmsg_TxHeader.RTR = CAN_RTR_DATA;
-    CAN_DMmsg_TxHeader.DLC = 0x08;
+    CAN_DM8006_msg_TxHeader.StdId = id;
+    CAN_DM8006_msg_TxHeader.IDE = CAN_ID_STD;
+    CAN_DM8006_msg_TxHeader.RTR = CAN_RTR_DATA;
+    CAN_DM8006_msg_TxHeader.DLC = 0x08;
     txData[0] = 0;
     txData[1] = 0;
     txData[2] = 0;
@@ -221,7 +222,7 @@ void DM8006_motor_PID_Control(CAN_HandleTypeDef *hcan, uint32_t id, float _torq)
     txData[6] = ((0 & 0xf) << 4) | (tor_tmp >> 8);
     txData[7] = tor_tmp & 0xff;
 
-    HAL_CAN_AddTxMessage(hcan, &CAN_DMmsg_TxHeader, txData, (uint32_t *)CAN_TX_MAILBOX0);
+    HAL_CAN_AddTxMessage(hcan, &CAN_DM8006_msg_TxHeader, txData, (uint32_t *)CAN_TX_MAILBOX0);
 }
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
@@ -323,7 +324,8 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
             MD_CanReceive(&DM8006_Date[0], rx_data_can2);
 
             DM8006_Date[0].esc_back_position_last = DM8006_Date[0].esc_back_position;
-            DM8006_Date[0].real_angle = DM8006_Date[0].esc_back_position * 57.29577951308f;
+            DM8006_Date[0].real_angle = (DM8006_Date[0].esc_back_position * 57.29577951308f)  + 35.0f;
+            //这里加上35度偏移量，是加上机械方面的限制最靠下的倾角是35
             FPS.Pitch_DM8006++;
             break;
         }

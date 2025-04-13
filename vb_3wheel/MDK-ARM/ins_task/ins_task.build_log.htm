@@ -22,12 +22,59 @@ Dialog DLL:      TCM.DLL V1.32.0.0
  
 <h2>Project:</h2>
 d:\cubeMX f\volleyball_3wheel\vb_3wheel\MDK-ARM\ins_task.uvprojx
-Project File Date:  02/27/2025
+Project File Date:  04/02/2025
 
 <h2>Output:</h2>
 *** Using Compiler 'V5.06 update 5 (build 528)', folder: 'D:\D P J\ARM\ARMCC\Bin'
 Build target 'ins_task'
-"ins_task\ins_task.axf" - 0 Error(s), 0 Warning(s).
+compiling tracking.c...
+..\application\tracking.c(230): warning:  #520-D: initialization with "{...}" expected for aggregate object
+          float motor_speed_calc[3] = 0;
+..\application\tracking.c(280): warning:  #1-D: last line of file ends without a newline
+  */
+..\application\tracking.c: 2 warnings, 0 errors
+compiling main.c...
+compiling Variables.c...
+..\application\Variables.c(42): warning:  #1-D: last line of file ends without a newline
+  volatile uint8_t robot_start_flag = 0;        //机器人启动标志位
+..\application\Variables.c: 1 warning, 0 errors
+compiling bat_control.c...
+..\application\bat_control.c(313): warning:  #174-D: expression has no effect
+              bat_control->striker_state == STRIKER_is_RUNNING;
+..\application\bat_control.c(304): warning:  #550-D: variable "control_falg"  was set but never used
+          int control_falg = 0;
+..\application\bat_control.c(541): warning:  #1035-D: single-precision operand implicitly converted to double-precision
+      if (s_visionInform.z_usbcam < 0.40)
+..\application\bat_control.c(586): error:  #167: argument of type "bat_control_t **" is incompatible with parameter of type "bat_control_t *"
+      all_target_clac(&bat_control);
+..\application\bat_control.c(587): error:  #167: argument of type "bat_control_t **" is incompatible with parameter of type "bat_control_t *"
+      motor_pid_clac(&bat_control);
+..\application\bat_control.c(588): error:  #167: argument of type "bat_control_t **" is incompatible with parameter of type "bat_control_t *"
+      bat_motor_control(&bat_control);
+..\application\bat_control.c(608): warning:  #1035-D: single-precision operand implicitly converted to double-precision
+      if (s_visionInform.z_usbcam < 0.45) // 0.45可可能还是有问题；适当降低，此外在特殊角度有存在距离有问题的现�?
+..\application\bat_control.c: 4 warnings, 3 errors
+compiling pc_interface.c...
+..\application\pc_interface.c(130): warning:  #940-D: missing return statement at end of non-void function "cam_space2bot_speace" 
+   }
+..\application\pc_interface.c(123): warning:  #177-D: variable "Cam_offset_Angle"  was declared but never referenced
+  	float Cam_offset_Angle = 30.0f;        //相机与机器人坐标系之间的偏角
+..\application\pc_interface.c(124): warning:  #177-D: variable "cam_distanceofbat"  was declared but never referenced
+  	float cam_distanceofbat = 0.0f;        //相机到球拍的距离
+..\application\pc_interface.c(125): warning:  #177-D: variable "cam_hightofbat"  was declared but never referenced
+  	float cam_hightofbat = 0.0f;           //相机到球拍的高度
+..\application\pc_interface.c(126): warning:  #177-D: variable "cam_offsetofbat"  was declared but never referenced
+  	float cam_offsetofbat = 0.0f;          //相机到球拍的偏置
+..\application\pc_interface.c(133): warning:  #1-D: last line of file ends without a newline
+   
+..\application\pc_interface.c: 6 warnings, 0 errors
+compiling robot.c...
+..\application\robot.c(44): warning:  #223-D: function "striker_init" declared implicitly
+      striker_init();
+..\application\robot.c: 1 warning, 0 errors
+compiling Bat_control_task.c...
+compiling Debug_task..c...
+"ins_task\ins_task.axf" - 3 Error(s), 14 Warning(s).
 
 <h2>Software Packages used:</h2>
 
@@ -50,7 +97,8 @@ Package Vendor: Keil
 <h2>Collection of Component Files used:</h2>
 
    * Component: ARM::CMSIS:CORE:5.0.1
-Build Time Elapsed:  00:00:01
+Target not created.
+Build Time Elapsed:  00:00:10
 </pre>
 </body>
 </html>

@@ -80,6 +80,9 @@ void Error_Handler(void);
 #define E3Z_L61_Pin GPIO_PIN_12
 #define E3Z_L61_GPIO_Port GPIOB
 #define E3Z_L61_EXTI_IRQn EXTI15_10_IRQn
+#define E3Z_L61_UP_Pin GPIO_PIN_13
+#define E3Z_L61_UP_GPIO_Port GPIOB
+#define E3Z_L61_UP_EXTI_IRQn EXTI15_10_IRQn
 #define CS1_GYRO_Pin GPIO_PIN_0
 #define CS1_GYRO_GPIO_Port GPIOB
 

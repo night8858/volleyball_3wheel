@@ -175,15 +175,21 @@ void PID_IncrementMode(s_pid_increase_t *pid)
 }
 /********************缂備焦绻傞顔碱嚕瀵ゆ换D闁硅矇鍐ㄧ厬**************************/
 
+
 /**
- * @brief 缂備焦绻傞顔碱嚕瀵ゆ换D閻犱緤绱曢悾锟�
- * @param s_pid_absolute_t *pid
- * @return float PIDout
+ * @brief PID控制器的绝对式算法实现
+ * @param pid 指向PID控制器结构体的指针
+ *
+ * @details 该函数实现了经典PID控制的绝对式算法:
+ *          - 计算比例、积分、微分误差
+ *          - 进行积分项限幅处理
+ *          - 计算PID各项输出
+ *          - 进行PID总输出限幅
  */
 void PID_AbsoluteMode(s_pid_absolute_t *pid)
 {
-    //PID闁告艾瀚獮鍡涙嚍閸屾矮鐒婄€归潻鎷�
-	pid->Perror = pid->NowError;                  //P闁绘粠鍨垫俊顓㈠磻韫囨挻鈻曢柡鍕靛灠缂嶅宕滃鍛剨鐎归潻鎷�
+    // PID闁告艾瀚獮鍡涙嚍閸屾矮鐒婄€归潻鎷�
+    pid->Perror = pid->NowError;                  //P闁绘粠鍨垫俊顓㈠磻韫囨挻鈻曢柡鍕靛灠缂嶅宕滃鍛剨鐎归潻鎷�
 	pid->Ierror += pid->NowError;                 //I闁绘粠鍨垫俊顓㈠磻韫囨挻鈻曢柡鍕靛灟缁楀倿鎮介棃娑欏€靛☉鎾亾闁烩晛鐡ㄧ€垫梻绱掗鐐茬厒闁绘粍婢樺﹢顏堟儍閸曨偂鐒婄€归潻鎷�
 	pid->Derror = pid->NowError - pid->LastError; //D闁绘粠鍨垫俊顓㈠磻韫囨挻鈻曢柡鍕靛灠缂嶅宕滃鍛剨鐎瑰壊鍠曠粭灞剧▔婵犲喚鍋ч柛瀣箰濡﹪鎯冮崟顐ｂ枙闁稿﹦銆嬬槐婵嬪础閸愯弓鐒婄€瑰壊鍠栭·鍐煂閿燂拷
 	pid->LastError = pid->NowError;               //闁哄洤鐡ㄩ弻濠囧磻韫囨挻鈻�	
@@ -200,16 +206,21 @@ void PID_AbsoluteMode(s_pid_absolute_t *pid)
 	if(pid->PIDout > pid->PIDoutMAX) pid->PIDout = pid->PIDoutMAX;
 	else if(pid->PIDout < -pid->PIDoutMAX) pid->PIDout = -pid->PIDoutMAX;
 }
+
 /**
- * @brief 缂備焦绻傞顔碱嚕瀵ゆ换D閻犱緤绱曢悾锟�(缂佸鍨伴崹搴ㄥ礆閸℃瑯鐎�)
- * @param s_pid_absolute_t *pid
- * @param float integral_apart_val
- * @return float PIDout
+ * @brief PID控制器的绝对式积分分离模式
+ * @param pid PID控制器结构体指针
+ * @param integral_apart_val 积分分离阈值，当误差小于此值时才进行积分运算
+ *
+ * @details 该函数实现了带积分分离的PID控制算法：
+ *          - 仅在误差小于阈值时进行积分运算
+ *          - 包含积分项和输出限幅
+ *          - 采用绝对式PID计算方法
  */
-void PID_AbsoluteMode_integral_apart(s_pid_absolute_t *pid,float integral_apart_val)
+void PID_AbsoluteMode_integral_apart(s_pid_absolute_t *pid, float integral_apart_val)
 {
-    //PID闁告艾瀚獮鍡涙嚍閸屾矮鐒婄€归潻鎷�
-	pid->Perror = pid->NowError;                  //P闁绘粠鍨垫俊顓㈠磻韫囨挻鈻曢柡鍕靛灠缂嶅宕滃鍛剨鐎归潻鎷�
+    // PID闁告艾瀚獮鍡涙嚍閸屾矮鐒婄€归潻鎷�
+    pid->Perror = pid->NowError;                  //P闁绘粠鍨垫俊顓㈠磻韫囨挻鈻曢柡鍕靛灠缂嶅宕滃鍛剨鐎归潻鎷�
     if(fabs(pid->NowError)<integral_apart_val)
 	    pid->Ierror += pid->NowError;                 //I闁绘粠鍨垫俊顓㈠磻韫囨挻鈻曢柡鍕靛灟缁楀倿鎮介棃娑欏€靛☉鎾亾闁烩晛鐡ㄧ€垫梻绱掗鐐茬厒闁绘粍婢樺﹢顏堟儍閸曨偂鐒婄€归潻鎷�
     else pid->Ierror = 0;
@@ -228,20 +239,22 @@ void PID_AbsoluteMode_integral_apart(s_pid_absolute_t *pid,float integral_apart_
 	if(pid->PIDout > pid->PIDoutMAX) pid->PIDout = pid->PIDoutMAX;
 	else if(pid->PIDout < -pid->PIDoutMAX) pid->PIDout = -pid->PIDoutMAX;
 }
+
+
 /**
- * @brief   PID闁告瑥鍊归弳鐔煎礆濠靛棭娼楅柛鏍ㄧ壄缁辨繈宕ｉ娆庣鞍闁衡偓閹勮含闁告帗绻傞～鎰板礌閺嵮冩瘣闁轰線顣﹂懙鎴︽晬鐏炶偐鐦嶉柛娆樺灟娴滄帡寮ㄩ幆褎韬€甸偊浜為獮鍡涙煂閿燂拷
- * @param 	PID_AbsoluteType *pid
- * @param   float kp
- * @param   float ki
- * @param   float kd
- * @param   float errILim
- * @param   float MaxOutCur		
+ * @brief  初始化绝对式PID控制器参数
+ * @param  pid        PID控制器结构体指针
+ * @param  kp        比例系数
+ * @param  ki        积分系数
+ * @param  kd        微分系数
+ * @param  errILim   积分限幅值
+ * @param  MaxOutCur 输出限幅值
  * @return None
  */
 void pid_abs_param_init(s_pid_absolute_t *pid, float kp, float ki, float kd, float errILim, float MaxOutCur)
 {
-	memset(pid,0,sizeof(s_pid_absolute_t));
-	pid->Kp = kp;
+    memset(pid, 0, sizeof(s_pid_absolute_t)); // 运算
+    pid->Kp = kp;
 	pid->Ki = ki;
 	pid->Kd = kd;
 	pid->IerrorLim = errILim;

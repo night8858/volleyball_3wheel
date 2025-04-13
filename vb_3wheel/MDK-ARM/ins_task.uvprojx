@@ -875,6 +875,16 @@
               <FileType>1</FileType>
               <FilePath>..\application\pc_interface.c</FilePath>
             </File>
+            <File>
+              <FileName>robot.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\application\robot.c</FilePath>
+            </File>
+            <File>
+              <FileName>tracking.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\application\tracking.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

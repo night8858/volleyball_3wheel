@@ -40,6 +40,9 @@
 #include "math.h"
 
 extern  s_task_flags task_flags ;
+extern s_FPS_monitor FPS;
+extern volatile uint8_t imu_flag;
+extern volatile uint8_t robot_start_flag;        //机器人启动标志位
 
 #define IMU_temp_PWM(pwm)  imu_pwm_set(pwm)                    //pwm给定
 
@@ -200,12 +203,12 @@ void INS_task(void const *pvParameters)
 
     while (1)
     {
+      FPS.board_imu++;
         //wait spi DMA tansmit done
         //等待SPI DMA传输
         while (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) != pdPASS)
         {
         }
-
 
         if(gyro_update_flag & (1 << IMU_NOTIFY_SHFITS))
         {
@@ -257,6 +260,7 @@ void INS_task(void const *pvParameters)
 				
 				IMU_receive_all_Value(&IMU_All_Value , &IMU_Ang , INS_gyro , accel_fliter_3, &bmi088_real_data.temp);
         
+        imu_flag = 1;
         //because no use ist8310 and save time, no use
         if(mag_update_flag &= 1 << IMU_DR_SHFITS)
         {
@@ -266,6 +270,7 @@ void INS_task(void const *pvParameters)
 
         //uart_dma_printf(&huart1 , "%f ,%f ,%f\n", INS_angle[0], INS_angle[1], INS_angle[2]);
     }
+    
 } 
 
 
@@ -625,6 +630,21 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
     }
 
+    //处理排球位置硬触发使用
+    //产生上升沿的时候进入中断，判断球是上升还是下落
+    else if(GPIO_Pin == E3Z_L61_UP_Pin)
+    {
+
+      if( task_flags.ball_soaring_flag == 1)
+      {
+        return;
+      }else
+      {
+        task_flags.bat_auto_hit_flag = 1;
+      }
+      
+      return;
+    }
 }
 
 /**

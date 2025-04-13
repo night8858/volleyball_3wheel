@@ -14,28 +14,34 @@
 #define motor_3505_num 3
 
 // PID宏定义参数
-#define M3505_MOTOR_SPEED_PID_KP 14.0f
-#define M3505_MOTOR_SPEED_PID_KI 1.0f
+#define M3505_MOTOR_MOVE_SPEED_PID_KP 16.0f
+#define M3505_MOTOR_MOVE_SPEED_PID_KI 1.3f
+#define M3505_MOTOR_MOVE_SPEED_PID_KD 0.0f
+#define M3505_MOTOR_MOVE_SPEED_PID_MAX_OUT 14000.0f
+#define M3505_MOTOR_MOVE_SPEED_PID_MAX_IOUT 4000.0f
+
+#define M3505_MOTOR_SPEED_PID_KP 2.5f
+#define M3505_MOTOR_SPEED_PID_KI 0.0f
 #define M3505_MOTOR_SPEED_PID_KD 0.0f
 #define M3505_MOTOR_SPEED_PID_MAX_OUT 14000.0f
 #define M3505_MOTOR_SPEED_PID_MAX_IOUT 4000.0f
 
-#define M3505_MOTOR_ANGLE_PID_KP 1.0f
+#define M3505_MOTOR_ANGLE_PID_KP 17.0f
 #define M3505_MOTOR_ANGLE_PID_KI 0.0f
-#define M3505_MOTOR_ANGLE_PID_KD 0.0f
+#define M3505_MOTOR_ANGLE_PID_KD 3.7f
 #define M3505_MOTOR_ANGLE_PID_MAX_OUT 14000.0f
 #define M3505_MOTOR_ANGLE_PID_MAX_IOUT 4000.0f
 
-#define CHASSIS_ANGLE_PID_KP -5000.0f
+#define CHASSIS_ANGLE_PID_KP -00.0f
 #define CHASSIS_ANGLE_PID_KI 0.0f
-#define CHASSIS_ANGLE_PID_KD 1.2f
+#define CHASSIS_ANGLE_PID_KD 45.0f
 #define CHASSIS_ANGLE_PID_MAX_OUT 12000.0f
 #define CHASSIS_ANGLE_PID_MAX_IOUT 8000.0f
 
-#define CHASSIS_ANGLE_SPEED_PID_KP 1.0f
-#define CHASSIS_ANGLE_SPEED_PID_KI 0.0f
+#define CHASSIS_ANGLE_SPEED_PID_KP -300.0f
+#define CHASSIS_ANGLE_SPEED_PID_KI 0.1f
 #define CHASSIS_ANGLE_SPEED_PID_KD 0.0f
-#define CHASSIS_ANGLE_SPEED_PID_MAX_OUT 12000.0f
+#define CHASSIS_ANGLE_SPEED_PID_MAX_OUT 0.5f
 #define CHASSIS_ANGLE_SPEED_PID_MAX_IOUT 8000.0f
 
 #define M6020_MOTOR_SPEED_PID_KP 2.0f
@@ -54,7 +60,7 @@
 #define MOTOR_ECD_TO_RAD 0.000766990394f //      2*  PI  /8192
 #define CHASSIS_VX_KP 16                 // x速度比例
 #define CHASSIS_VY_KP 6                 // y速度比例
-#define CHASSIS_WZ_KP 50            // 角速度比例
+#define CHASSIS_WZ_KP 30            // 角速度比例
 #define CHASSIS_STOP_LINE 12             // 停止线位置
 
 
@@ -163,9 +169,14 @@ typedef struct
 {
     const RC_ctrl_t *chassis_RC;      // 底盘使用的遥控器指针, the point to remote control
     const fp32 *chassis_INS_angle;    // the point to the euler angle of gyro sensor.获取陀螺仪解算出的欧拉角指针
-    chassis_motor_t chassis_motor;    // chassis motor data.底盘电机数据
+    // chassis_motor_t chassis_motor;    // chassis motor data.底盘电机数据
 
-    s_pid_absolute_t chassis_pid_angle;   //底盘角度pid
+    s_pid_absolute_t chassis_pid_anglespeed;   //底盘角度pid
+
+    s_pid_absolute_t M3508_pid_stop_speed[3];
+    s_pid_absolute_t M3508_pid_stop_angle[3];
+    
+    s_pid_absolute_t M3508_pid_move_speed[3];
 
     first_order_filter_type_t chassis_cmd_slow_set_vx; // use first order filter to slow set-point.使用一阶低通滤波减缓设定值
     first_order_filter_type_t chassis_cmd_slow_set_vy; // use first order filter to slow set-point.使用一阶低通滤波减缓设定值
@@ -181,6 +192,9 @@ typedef struct
     int16_t chassis_vy_ch;
     int16_t chassis_wz_ch;
 
+    float chassis_forward_postion; // chassis forward speed, unit m/s.底盘前进距离 单位m
+    float chassis_shift_postion; // chassis forward speed, unit m/s.底盘平移距离 单位m
+    
     int64_t chassis_keep_position[3]; // 底盘连续编码值（刻度）
 
     fp32 chassis_yaw_set;
@@ -192,14 +206,20 @@ typedef struct
     fp32 vy_max_speed; // max letf speed, unit m/s.左方向最大速度 单位m/s
     fp32 vy_min_speed; // max right speed, unit m/s.右方向最大速度 单位m/s
 
+    float chassis_start_ang[3];
+
+
 } chassis_control_t;
 
 // extern void chasis_Task(void const * argument);
 
-void motor_init(chassis_control_t *init);
+void chassis_init(chassis_control_t *init);
 void motor_control_send(chassis_control_t *control_loop);
 void chassis_feedback_update(chassis_control_t *feedback_update);
 void chassis_movement_calc(chassis_control_t *motor_control);
 void rc_to_motor_set(chassis_control_t *motor_control);
+void chassis_stop_pid_calc(chassis_control_t *control_loop);
+void chassis_speed_pid_calc(chassis_control_t *control_loop);
+
 
 #endif
