@@ -133,7 +133,7 @@ void final_Monitor(void)
     finalFPS.Striker_3508       = FPS.Striker_3508      - startFPS.Striker_3508;
     finalFPS.PC                 = FPS.PC                - startFPS.PC;
 	
- }
+}
 
 void mode_switch(void)
 {   
@@ -167,14 +167,15 @@ void mode_switch(void)
         if (rc_ctrl.rc.s[0] == 1)
         {
             //自动模式下，机器人发球
-            robot_StateMode.roboMode = AUTO_SERVE_BALL;
-        } 
+            robot_StateMode.roboMode = ROBOT_DEBUG;
+        }
 
         else if (rc_ctrl.rc.s[0] == 2)
         {
             //自动模式下，机器人接发球
-            robot_StateMode.roboMode =AUTO_RECEIVE_BALL;
+            robot_StateMode.roboMode = AUTO_RECEIVE_BALL;
         }
+
         else if ( rc_ctrl.rc.s[0] == 3)
         {
             //手动模式击球
@@ -189,10 +190,10 @@ void mode_switch(void)
 //检测模式切换
    if(robot_StateMode_last.roboMode == robot_StateMode.roboMode)
    {
-    task_flags.mode_switched_flag = 1;
+    task_flags.mode_switched_flag = 0;
    } else
    {
-    task_flags.mode_switched_flag = 0;
+    task_flags.mode_switched_flag = 1;
    }
 
    if(VolleyRobot_R1.DBUS_ERROR == 1)

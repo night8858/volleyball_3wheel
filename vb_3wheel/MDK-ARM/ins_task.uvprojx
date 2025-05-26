@@ -2921,6 +2921,11 @@
               <FileType>1</FileType>
               <FilePath>..\Task\Monitor_task.c</FilePath>
             </File>
+            <File>
+              <FileName>striker_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Task\striker_task.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

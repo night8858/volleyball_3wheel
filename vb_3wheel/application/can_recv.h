@@ -54,12 +54,17 @@ typedef enum
     CAN_3508_M3_ID = 0x203,
     CAN_3508_M4_ID = 0x204,
 
+    CAN_3508_ALL_2ID = 0x1FF,
+    CAN_3508_M5_ID = 0x205,    //击球电机
+    CAN_3508_M6_ID = 0x206,    //击球电机
+
+
     /*6020电机的CAN ID*/
-    CAN_6020_ALL_ID = 0x1FF,
-    CAN_6020_M1_ID = 0X205,
-    CAN_6020_M2_ID = 0x206,
-    CAN_6020_M3_ID = 0x207,
-    CAN_6020_M4_ID = 0x208,
+    // CAN_6020_ALL_ID = 0x1FF,
+    // CAN_6020_M1_ID = 0X205,
+    // CAN_6020_M2_ID = 0x206,
+    // CAN_6020_M3_ID = 0x207,
+    // CAN_6020_M4_ID = 0x208,
 
     /*板间通讯的CAN ID*/
     DT7_RX_ch = 0x301,
@@ -185,6 +190,7 @@ typedef struct
 
 void CAN_cmd_6020(int16_t CMD_ID_1, int16_t CMD_ID_2, int16_t CMD_ID_3, int16_t CMD_ID_4);
 void CAN_cmd_3508(int16_t CMD_ID_1, int16_t CMD_ID_2, int16_t CMD_ID_3, int16_t CMD_ID_4);
+void CAN_cmd_striker(int16_t CMD_ID_5, int16_t CMD_ID_6);
 
 
 /*达妙电机的控制函数*/

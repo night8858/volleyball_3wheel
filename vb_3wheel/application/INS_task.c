@@ -83,6 +83,7 @@ static void imu_temp_control(fp32 temp);
   * @retval         none
   */
 static void imu_cmd_spi_dma(void);
+static void IMUDelayAssignment(s_IMU_all_Value*imu_all_value, float *ysw_spd_buf, uint8_t index);
 
 
 void AHRS_init(fp32 quat[4], fp32 accel[3], fp32 mag[3]);
@@ -149,8 +150,8 @@ static fp32 INS_mag[3] = {0.0f, 0.0f, 0.0f};
 static fp32 INS_quat[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 fp32 INS_angle[3] = {0.0f, 0.0f, 0.0f};      //euler angle, unit rad.欧拉角 单位 rad
 
-
-
+static int16_t ffps = 0;
+float		yawSpd_buff[30];//yaw轴陀螺仪角速度延迟赋值
 
 /**
   * @brief          imu task, init bmi088, ist8310, calculate the euler angle
@@ -165,6 +166,7 @@ fp32 INS_angle[3] = {0.0f, 0.0f, 0.0f};      //euler angle, unit rad.欧拉角 �
 void INS_task(void const *pvParameters)
 {
     //wait a time
+
     osDelay(INS_TASK_INIT_TIME);
     while(BMI088_init())
     {
@@ -183,7 +185,9 @@ void INS_task(void const *pvParameters)
 
     AHRS_init(INS_quat, bmi088_real_data.accel, ist8310_real_data.mag);
 
-
+    accel_fliter_1[0] = accel_fliter_2[0] = accel_fliter_3[0] = INS_accel[0];
+    accel_fliter_1[1] = accel_fliter_2[1] = accel_fliter_3[1] = INS_accel[1];
+    accel_fliter_1[2] = accel_fliter_2[2] = accel_fliter_3[2] = INS_accel[2];
     //get the handle of task
     //获取当前任务的任务句柄，
     INS_task_local_handler = xTaskGetHandle(pcTaskGetName(NULL));
@@ -204,6 +208,7 @@ void INS_task(void const *pvParameters)
     while (1)
     {
       FPS.board_imu++;
+      ffps ++;
         //wait spi DMA tansmit done
         //等待SPI DMA传输
         while (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) != pdPASS)
@@ -260,7 +265,34 @@ void INS_task(void const *pvParameters)
 				
 				IMU_receive_all_Value(&IMU_All_Value , &IMU_Ang , INS_gyro , accel_fliter_3, &bmi088_real_data.temp);
         
-        imu_flag = 1;
+                //陀螺仪延迟赋值
+				if(ffps > 100) imu_flag = 1;
+        // yawSpd_buff[21]=yawSpd_buff[20];
+        // yawSpd_buff[20]=yawSpd_buff[19];
+        // yawSpd_buff[19]=yawSpd_buff[18];
+        // yawSpd_buff[18]=yawSpd_buff[17];
+        // yawSpd_buff[17]=yawSpd_buff[16];
+        // yawSpd_buff[16]=yawSpd_buff[15];
+        // yawSpd_buff[15]=yawSpd_buff[14];
+
+        // yawSpd_buff[14]=yawSpd_buff[13];
+        // yawSpd_buff[13]=yawSpd_buff[12];
+        // yawSpd_buff[12]=yawSpd_buff[11];
+        // yawSpd_buff[11]=yawSpd_buff[10];
+        // yawSpd_buff[10]=yawSpd_buff[9];
+				// yawSpd_buff[9]=yawSpd_buff[8];
+				// yawSpd_buff[8]=yawSpd_buff[7];
+				// yawSpd_buff[7]=yawSpd_buff[5];
+				// yawSpd_buff[6]=yawSpd_buff[5];
+				// yawSpd_buff[5]=yawSpd_buff[4];
+				// yawSpd_buff[4]=yawSpd_buff[3];
+				// yawSpd_buff[3]=yawSpd_buff[2];
+				// yawSpd_buff[2]=yawSpd_buff[1];
+				// yawSpd_buff[1]=yawSpd_buff[0];
+				// yawSpd_buff[0]=IMU_All_Value.yaw.yawAngV*180/PI;
+        IMUDelayAssignment(&IMU_All_Value, yawSpd_buff, 14);
+
+        
         //because no use ist8310 and save time, no use
         if(mag_update_flag &= 1 << IMU_DR_SHFITS)
         {
@@ -273,6 +305,22 @@ void INS_task(void const *pvParameters)
     
 } 
 
+
+/**
+ * @brief 陀螺仪延迟赋值
+ * 
+ * @param imu_all_value 
+ * @param buf 
+ * @param index 
+ */
+static void IMUDelayAssignment(s_IMU_all_Value*imu_all_value, float *ysw_spd_buf, uint8_t index)
+{
+  for (int8_t i = index; i < 0; i--)
+  {
+    ysw_spd_buf[i] = ysw_spd_buf[i-1];
+  }
+  ysw_spd_buf[0] = imu_all_value->yaw.yawAngV * 180/PI;
+}
 
 /**
  * @brief 将陀螺仪角度变为连续

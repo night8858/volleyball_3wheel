@@ -59,6 +59,7 @@ osThreadId INSTaskHandle;
 osThreadId ChassisTaskHandle;
 osThreadId Monitor_TaskHandle;
 osThreadId functional_zoneHandle;
+osThreadId Striker_taskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -71,6 +72,7 @@ void INS_task(void const * argument);
 void chassis_task(void const * argument);
 void Monitor_task(void const * argument);
 void functional_zone_task(void const * argument);
+void striker_task(void const * argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -157,6 +159,10 @@ void MX_FREERTOS_Init(void) {
   /* definition and creation of functional_zone */
   osThreadDef(functional_zone, functional_zone_task, osPriorityAboveNormal, 0, 1024);
   functional_zoneHandle = osThreadCreate(osThread(functional_zone), NULL);
+
+  /* definition and creation of Striker_task */
+  osThreadDef(Striker_task, striker_task, osPriorityNormal, 0, 256);
+  Striker_taskHandle = osThreadCreate(osThread(Striker_task), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -277,6 +283,24 @@ __weak void functional_zone_task(void const * argument)
     osDelay(1);
   }
   /* USER CODE END functional_zone_task */
+}
+
+/* USER CODE BEGIN Header_striker_task */
+/**
+* @brief Function implementing the Striker_task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_striker_task */
+__weak void striker_task(void const * argument)
+{
+  /* USER CODE BEGIN striker_task */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END striker_task */
 }
 
 /* Private application code --------------------------------------------------*/

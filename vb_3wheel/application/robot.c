@@ -41,7 +41,6 @@ void robot_init(void)
     mode_switch();              // 模式切换初始化,确认初始模式      
     chassis_init(&chassis_control);// 底盘初始化
     bat_motor_Init(&bat_control);//球拍初始化
-    striker_init();
     robo_init_complete();
     robot_start_flag = 1;
 }

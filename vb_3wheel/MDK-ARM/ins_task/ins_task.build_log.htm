@@ -22,59 +22,120 @@ Dialog DLL:      TCM.DLL V1.32.0.0
  
 <h2>Project:</h2>
 d:\cubeMX f\volleyball_3wheel\vb_3wheel\MDK-ARM\ins_task.uvprojx
-Project File Date:  04/02/2025
+Project File Date:  05/25/2025
 
 <h2>Output:</h2>
 *** Using Compiler 'V5.06 update 5 (build 528)', folder: 'D:\D P J\ARM\ARMCC\Bin'
 Build target 'ins_task'
-compiling tracking.c...
-..\application\tracking.c(230): warning:  #520-D: initialization with "{...}" expected for aggregate object
-          float motor_speed_calc[3] = 0;
-..\application\tracking.c(280): warning:  #1-D: last line of file ends without a newline
-  */
-..\application\tracking.c: 2 warnings, 0 errors
-compiling main.c...
 compiling Variables.c...
-..\application\Variables.c(42): warning:  #1-D: last line of file ends without a newline
+..\application\Variables.c(70): warning:  #1-D: last line of file ends without a newline
   volatile uint8_t robot_start_flag = 0;        //机器人启动标志位
 ..\application\Variables.c: 1 warning, 0 errors
-compiling bat_control.c...
-..\application\bat_control.c(313): warning:  #174-D: expression has no effect
-              bat_control->striker_state == STRIKER_is_RUNNING;
-..\application\bat_control.c(304): warning:  #550-D: variable "control_falg"  was set but never used
-          int control_falg = 0;
-..\application\bat_control.c(541): warning:  #1035-D: single-precision operand implicitly converted to double-precision
-      if (s_visionInform.z_usbcam < 0.40)
-..\application\bat_control.c(586): error:  #167: argument of type "bat_control_t **" is incompatible with parameter of type "bat_control_t *"
-      all_target_clac(&bat_control);
-..\application\bat_control.c(587): error:  #167: argument of type "bat_control_t **" is incompatible with parameter of type "bat_control_t *"
-      motor_pid_clac(&bat_control);
-..\application\bat_control.c(588): error:  #167: argument of type "bat_control_t **" is incompatible with parameter of type "bat_control_t *"
-      bat_motor_control(&bat_control);
-..\application\bat_control.c(608): warning:  #1035-D: single-precision operand implicitly converted to double-precision
-      if (s_visionInform.z_usbcam < 0.45) // 0.45可可能还是有问题；适当降低，此外在特殊角度有存在距离有问题的现�?
-..\application\bat_control.c: 4 warnings, 3 errors
-compiling pc_interface.c...
-..\application\pc_interface.c(130): warning:  #940-D: missing return statement at end of non-void function "cam_space2bot_speace" 
-   }
-..\application\pc_interface.c(123): warning:  #177-D: variable "Cam_offset_Angle"  was declared but never referenced
-  	float Cam_offset_Angle = 30.0f;        //相机与机器人坐标系之间的偏角
-..\application\pc_interface.c(124): warning:  #177-D: variable "cam_distanceofbat"  was declared but never referenced
-  	float cam_distanceofbat = 0.0f;        //相机到球拍的距离
-..\application\pc_interface.c(125): warning:  #177-D: variable "cam_hightofbat"  was declared but never referenced
-  	float cam_hightofbat = 0.0f;           //相机到球拍的高度
-..\application\pc_interface.c(126): warning:  #177-D: variable "cam_offsetofbat"  was declared but never referenced
-  	float cam_offsetofbat = 0.0f;          //相机到球拍的偏置
-..\application\pc_interface.c(133): warning:  #1-D: last line of file ends without a newline
-   
-..\application\pc_interface.c: 6 warnings, 0 errors
-compiling robot.c...
-..\application\robot.c(44): warning:  #223-D: function "striker_init" declared implicitly
-      striker_init();
-..\application\robot.c: 1 warning, 0 errors
+compiling usbd_cdc_if.c...
+compiling can_recv.c...
+..\application\can_recv.c(189): warning:  #177-D: variable "_pos"  was declared but never referenced
+      float _pos, _vel, _KP, _KD = {0};
+..\application\can_recv.c(189): warning:  #177-D: variable "_vel"  was declared but never referenced
+      float _pos, _vel, _KP, _KD = {0};
+..\application\can_recv.c(189): warning:  #177-D: variable "_KP"  was declared but never referenced
+      float _pos, _vel, _KP, _KD = {0};
+..\application\can_recv.c(189): warning:  #177-D: variable "_KD"  was declared but never referenced
+      float _pos, _vel, _KP, _KD = {0};
+..\application\can_recv.c(223): warning:  #177-D: variable "_pos"  was declared but never referenced
+      float _pos, _vel, _KP, _KD = {0};
+..\application\can_recv.c(223): warning:  #177-D: variable "_vel"  was declared but never referenced
+      float _pos, _vel, _KP, _KD = {0};
+..\application\can_recv.c(223): warning:  #177-D: variable "_KP"  was declared but never referenced
+      float _pos, _vel, _KP, _KD = {0};
+..\application\can_recv.c(223): warning:  #177-D: variable "_KD"  was declared but never referenced
+      float _pos, _vel, _KP, _KD = {0};
+..\application\can_recv.c(377): warning:  #177-D: variable "T_int"  was declared but never referenced
+      int T_int = RxDate[6];
+..\application\can_recv.c(23): warning:  #177-D: variable "RM6020_tx_message"  was declared but never referenced
+  static CAN_TxHeaderTypeDef RM6020_tx_message; // can_6020发送邮�?
+..\application\can_recv.c(35): warning:  #177-D: variable "can_6020_send_data"  was declared but never referenced
+  static uint8_t can_6020_send_data[8];
+..\application\can_recv.c: 11 warnings, 0 errors
 compiling Bat_control_task.c...
+compiling robot.c...
+compiling tracking.c...
+..\application\tracking.c(284): warning:  #1035-D: single-precision operand implicitly converted to double-precision
+      if (s_visionInform.ball_pos_bat.x != 0 || s_visionInform.ball_pos_bat.y != 0 || s_visionInform.ball_pos_bat.z > 0.10)
+..\application\tracking.c(411): warning:  #1-D: last line of file ends without a newline
+  */
+..\application\tracking.c: 2 warnings, 0 errors
+compiling pc_interface.c...
+..\application\pc_interface.c(117): warning:  #1035-D: single-precision operand implicitly converted to double-precision
+  	float cos_theta = cosf(theta * 0.017453292);
+..\application\pc_interface.c(118): warning:  #1035-D: single-precision operand implicitly converted to double-precision
+  	float sin_theta = sinf(theta * 0.017453292);
+..\application\pc_interface.c(119): warning:  #1035-D: single-precision operand implicitly converted to double-precision
+  	float cos_alpha = cosf(alpha * 0.017453292);
+..\application\pc_interface.c(120): warning:  #1035-D: single-precision operand implicitly converted to double-precision
+  	float sin_alpha = sinf(alpha * 0.017453292);
+..\application\pc_interface.c(115): warning:  #177-D: variable "tx"  was declared but never referenced
+  	float tx , ty ,yz;
+..\application\pc_interface.c(115): warning:  #177-D: variable "ty"  was declared but never referenced
+  	float tx , ty ,yz;
+..\application\pc_interface.c(115): warning:  #177-D: variable "yz"  was declared but never referenced
+  	float tx , ty ,yz;
+..\application\pc_interface.c(160): warning:  #1035-D: single-precision operand implicitly converted to double-precision
+  	float cos_theta = cosf(theta * 0.017453292);
+..\application\pc_interface.c(161): warning:  #1035-D: single-precision operand implicitly converted to double-precision
+  	float sin_theta = sinf(theta * 0.017453292);
+..\application\pc_interface.c(162): warning:  #1035-D: single-precision operand implicitly converted to double-precision
+  	float cos_alpha = cosf(alpha * 0.017453292);
+..\application\pc_interface.c(163): warning:  #1035-D: single-precision operand implicitly converted to double-precision
+  	float sin_alpha = sinf(alpha * 0.017453292);
+..\application\pc_interface.c(158): warning:  #177-D: variable "tx"  was declared but never referenced
+  	float tx , ty ,yz;
+..\application\pc_interface.c(158): warning:  #177-D: variable "ty"  was declared but never referenced
+  	float tx , ty ,yz;
+..\application\pc_interface.c(158): warning:  #177-D: variable "yz"  was declared but never referenced
+  	float tx , ty ,yz;
+..\application\pc_interface.c: 14 warnings, 0 errors
+compiling Chassis_task.c...
+compiling bat_control.c...
+..\application\bat_control.c(518): warning:  #1035-D: single-precision operand implicitly converted to double-precision
+          if (s_visionInform.ball_pos_bat.z < 0.25 && s_visionInform.ball_pos_bat.z != 0)
+..\application\bat_control.c(644): warning:  #1182-D: a declaration cannot have a label
+          float tick = (HAL_GetTick() - ready_state_time);
+..\application\bat_control.c(636): warning:  #546-D: transfer of control bypasses initialization of:
+            variable "tick"  (declared at line 644)
+            variable "angle"  (declared at line 645)
+      switch (striker_reading)
+      ^
+..\application\bat_control.c(740): warning:  #1182-D: a declaration cannot have a label
+          float tick = HAL_GetTick() - serve_state_start_time;
+..\application\bat_control.c(661): warning:  #546-D: transfer of control bypasses initialization of:
+            variable "tick"  (declared at line 740)
+            variable "angle"  (declared at line 741)
+      switch (serve_state)
+      ^
+..\application\bat_control.c(85): warning:  #177-D: function "ACTION_serve_a_ball"  was declared but never referenced
+  static void ACTION_serve_a_ball(void);
+..\application\bat_control.c(771): warning:  #177-D: function "ACTION_all_reset"  was declared but never referenced
+  void ACTION_all_reset(void)
+..\application\bat_control.c(511): warning:  #177-D: function "ACTION_up_receive_a_ball"  was declared but never referenced
+  void ACTION_up_receive_a_ball(void)
+..\application\bat_control.c(93): warning:  #177-D: function "ACTION_bat_hit"  was declared but never referenced
+  static void ACTION_bat_hit(float aim_z);
+..\application\bat_control.c(486): warning:  #177-D: function "ACTION_bat_MOVE"  was declared but never referenced
+  bool_t ACTION_bat_MOVE(float aim_x, float aim_y, float aim_z, float need_pitch)
+..\application\bat_control.c: 10 warnings, 0 errors
+compiling main.c...
+compiling remote_control.c...
 compiling Debug_task..c...
-"ins_task\ins_task.axf" - 3 Error(s), 14 Warning(s).
+compiling chassis.c...
+compiling striker_task.c...
+compiling INS_task.c...
+..\application\INS_task.c(334): warning:  #550-D: variable "pitchLast"  was set but never used
+      static float yawLast,pitchLast,rollLast;
+..\application\INS_task.c: 1 warning, 0 errors
+linking...
+Program Size: Code=95112 RO-data=1924 RW-data=840 ZI-data=57104  
+FromELF: creating hex file...
+"ins_task\ins_task.axf" - 0 Error(s), 39 Warning(s).
 
 <h2>Software Packages used:</h2>
 
@@ -97,8 +158,7 @@ Package Vendor: Keil
 <h2>Collection of Component Files used:</h2>
 
    * Component: ARM::CMSIS:CORE:5.0.1
-Target not created.
-Build Time Elapsed:  00:00:10
+Build Time Elapsed:  00:00:11
 </pre>
 </body>
 </html>

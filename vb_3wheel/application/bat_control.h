@@ -35,17 +35,17 @@
 
 
 //pitch俯仰角的PID参数//
-#define DM8006_ANGLE_PID_KP   0.76f    //
+#define DM8006_ANGLE_PID_KP   3.88f    //
 #define DM8006_ANGLE_PID_KI   0.0f    //
-#define DM8006_ANGLE_PID_KD   2.3f
+#define DM8006_ANGLE_PID_KD   5.2f
 #define DM8006_ANGLE_PID_MAX_IOUT 100.0f //  
-#define DM8006_ANGLE_PID_MAX_OUT 50.0f //  
+#define DM8006_ANGLE_PID_MAX_OUT 80.0f //  
 
-#define DM8006_SPEED_PID_KP   0.18f    //不知道为什么大于0.3就震荡
+#define DM8006_SPEED_PID_KP   0.11f    //不知道为什么大于0.3就震荡
 #define DM8006_SPEED_PID_KI   0.0f    //
 #define DM8006_SPEED_PID_KD   0.0f
 #define DM8006_SPEED_PID_MAX_IOUT 100.0f //  
-#define DM8006_SPEED_PID_MAX_OUT 12.0f // 给20是限制扭矩输出，8006只有8n的额定
+#define DM8006_SPEED_PID_MAX_OUT 8.0f // 给20是限制扭矩输出，8006只有8n的额定
 
 
 
@@ -81,8 +81,44 @@
 #define STRIKER_3508_SPEED_INIT_PID_KI   0.0f    //
 #define STRIKER_3508_SPEED_INIT_PID_KD   8.0f
 #define STRIKER_3508_SPEED_INIT_PID_MAX_IOUT 8000.0f //  
-#define STRIKER_3508_SPEED_INIT_PID_MAX_OUT 12000.0f // 
+#define STRIKER_3508_SPEED_INIT_PID_MAX_OUT 8000.0f // 
 
+
+
+typedef enum {
+    BAT_IDLE,
+    BAT_HITTING,
+    BAT_COOLDOWN
+} bat_state_t;           //球拍打球状态机
+
+typedef enum 
+{
+    SERVE_IDLE,          // 空闲状态，等待指令
+    BAT_HITTING_UP1,      // 球拍向上击球
+    WITE_FOR_BALL,            // 准备冷却    
+    BAT_HITTING_UP2,      // 球拍向上击球
+    WAIT_FOR_BALL_DOWN,  // 等待球下落
+    STRIKER_HITTING,     // 击球杆击球
+    STRIKER_RETURNING,   // 击球杆复位
+    SERVE_COOLDOWN,       // 冷却状态
+    OVERTIME_RETURNING     // 超时复位
+}serve_ball_t;           //击球发球状态机
+
+typedef enum 
+{
+    STRIKER_START,      // 准备击球
+    STRIKER_MOVEING,      // 
+    SERVE_COMPLETE          // 空闲状态，等待指令
+
+}striker_reading_t;           //击球发球状态机
+
+
+// typedef enum{
+
+//     STRIKER_3508_PID_DOUBLE = 0,   //串级环
+//     STRIKER_3508_PID_SIGLE = 1     //单速度环
+
+// }striker_pid_choose_e;
 
 //过高5.6
 
@@ -122,9 +158,15 @@ typedef enum
 {
     STRIKER_is_READY = 0,
     STRIKER_is_RUNNING = 1,
-
-
 }e_striker_flags;
+
+typedef enum
+{
+    no_move = 0,
+    Underhand_serve = 1,     ///下手球发球
+    Overhand_serve = 2,      ///上手球发球
+  
+}e_striker_action_flags;
 
 typedef enum
 {
@@ -168,7 +210,8 @@ typedef struct
 
     e_striker_flags striker_state;
     e_bat_flags bat_state;
-
+    e_striker_action_flags striker_action_state;
+    
     first_order_filter_type_t input_pitch_pos_filter; // 使用一阶低通滤波器对输入位置进行平滑处理
     first_order_filter_type_t input_set_X_filter; // 使用一阶低通滤波器对输入位置进行平滑处理
     first_order_filter_type_t input_set_Y_filter; // 使用一阶低通滤波器对输入位置进行平滑处理
@@ -203,12 +246,16 @@ typedef struct
     float real_z;
     float real_pitch;
     
+    float striker_angle;
     float striker_start_angle;
     float set_striker_angle;
     
-
 }bat_control_t;
 /*用来储存所有的机器人参数的总结构体，可通过修改部分参数来更改机器人项目*/
+
+void striker_motor_control(bat_control_t *bat_control);
+void striker_new_init(void);
+void ACTION_striker_move(void);
 
 
 void bat_motor_Init(bat_control_t *bat_control);

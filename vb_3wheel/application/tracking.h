@@ -12,6 +12,9 @@ typedef struct
     float mid_traget_USBCAM_x;
     float mid_traget_USBCAM_y;
     
+    float sub_offset_x;
+    float sub_offset_y;
+
     first_order_filter_type_t HIKVISION_x_filter;
     first_order_filter_type_t HIKVISION_y_filter;
     
@@ -42,10 +45,20 @@ typedef struct {
     float gain[2];  /* 2x1 */
 } kalman2_state;  
 
+
+
+
 void pc_data_check(void);
 void tracking_init(s_tracking_data_t *tracking_data);
+void kalman1_init(kalman1_state *state, float init_x, float init_p, float init_q, float init_r);
+float kalman1_filter(kalman1_state *state, float z_measure);
 void chassis_volleyball_track(void);
+void keep_ball_in_center_track(void);
+
 void kalman2_init(kalman2_state *state, const float *init_x, float (*init_p)[2]);
+void pc_data_filter_init(void);
+void pc_data_update(float hik_data_x , float hik_data_y , float hik_data_z);
+void ACTION_chassis_serve_tracking(void);
 
 
 #endif

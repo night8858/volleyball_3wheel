@@ -12,7 +12,7 @@ extern CAN_HandleTypeDef hcan2;
 extern RC_ctrl_t rc_ctrl;
 extern s_FPS_monitor FPS;
 
-extern s_Dji_motor_data_t motor_Date[4]; // RM电机回传数据结构体
+extern s_Dji_motor_data_t motor_Date[6];    // RM电机回传数据结构
 
 extern s_motor_data_t DM4340_Date[3]; // DM4340回传数据结构体
 extern s_motor_data_t DM8006_Date[1]; // DM4340回传数据结构体
@@ -22,6 +22,8 @@ int DM_circle_num[4];
 
 static CAN_TxHeaderTypeDef RM6020_tx_message; // can_6020发送邮箱
 static CAN_TxHeaderTypeDef RM3508_tx_message; // can_3508发送邮箱RM
+static CAN_TxHeaderTypeDef RM3508_tx_message2; // can_3508发送邮箱RM
+
 
 static CAN_TxHeaderTypeDef CAN_DMstart_TxHeader;
 static CAN_TxHeaderTypeDef CAN_DM4340_msg_TxHeader;
@@ -32,7 +34,7 @@ static CAN_TxHeaderTypeDef CAN_HTmsg_TxHeader;
 
 static uint8_t can_6020_send_data[8];
 static uint8_t can_3508_send_data[8];
-
+static uint8_t can_3508_send_data2[8];
 #define get_motor_measure(ptr, data)                                   \
     {                                                                  \
         (ptr)->last_ecd = (ptr)->ecd;                                  \
@@ -43,23 +45,23 @@ static uint8_t can_3508_send_data[8];
     }
 
 // 所有6020电机的指令发送
-void CAN_cmd_6020(int16_t CMD_ID_1, int16_t CMD_ID_2, int16_t CMD_ID_3, int16_t CMD_ID_4)
-{
-    uint32_t send_mail_box;
-    RM6020_tx_message.StdId = CAN_6020_ALL_ID;
-    RM6020_tx_message.IDE = CAN_ID_STD;
-    RM6020_tx_message.RTR = CAN_RTR_DATA;
-    RM6020_tx_message.DLC = 0x08;
-    can_6020_send_data[0] = (CMD_ID_1 >> 8);
-    can_6020_send_data[1] = CMD_ID_1;
-    can_6020_send_data[2] = (CMD_ID_2 >> 8);
-    can_6020_send_data[3] = CMD_ID_2;
-    can_6020_send_data[4] = (CMD_ID_3 >> 8);
-    can_6020_send_data[5] = CMD_ID_3;
-    can_6020_send_data[6] = (CMD_ID_4 >> 8);
-    can_6020_send_data[7] = CMD_ID_4;
-    HAL_CAN_AddTxMessage(&hcan2, &RM6020_tx_message, can_6020_send_data, &send_mail_box);
-}
+// void CAN_cmd_6020(int16_t CMD_ID_1, int16_t CMD_ID_2, int16_t CMD_ID_3, int16_t CMD_ID_4)
+// {
+//     uint32_t send_mail_box;
+//     RM6020_tx_message.StdId = CAN_6020_ALL_ID;
+//     RM6020_tx_message.IDE = CAN_ID_STD;
+//     RM6020_tx_message.RTR = CAN_RTR_DATA;
+//     RM6020_tx_message.DLC = 0x08;
+//     can_6020_send_data[0] = (CMD_ID_1 >> 8);
+//     can_6020_send_data[1] = CMD_ID_1;
+//     can_6020_send_data[2] = (CMD_ID_2 >> 8);
+//     can_6020_send_data[3] = CMD_ID_2;
+//     can_6020_send_data[4] = (CMD_ID_3 >> 8);
+//     can_6020_send_data[5] = CMD_ID_3;
+//     can_6020_send_data[6] = (CMD_ID_4 >> 8);
+//     can_6020_send_data[7] = CMD_ID_4;
+//     HAL_CAN_AddTxMessage(&hcan2, &RM6020_tx_message, can_6020_send_data, &send_mail_box);
+// }
 
 // 所有3508电机（动力电机）的指令发送
 void CAN_cmd_3508(int16_t CMD_ID_1, int16_t CMD_ID_2, int16_t CMD_ID_3, int16_t CMD_ID_4)
@@ -80,6 +82,24 @@ void CAN_cmd_3508(int16_t CMD_ID_1, int16_t CMD_ID_2, int16_t CMD_ID_3, int16_t 
     HAL_CAN_AddTxMessage(&hcan1, &RM3508_tx_message, can_3508_send_data, &send_mail_box01);
 }
 
+
+void CAN_cmd_striker(int16_t CMD_ID_5, int16_t CMD_ID_6)
+{
+    uint32_t send_mail_box01;
+    RM3508_tx_message2.StdId = CAN_3508_ALL_2ID;
+    RM3508_tx_message2.IDE = CAN_ID_STD;
+    RM3508_tx_message2.RTR = CAN_RTR_DATA;
+    RM3508_tx_message2.DLC = 0x08;
+    can_3508_send_data2[0] = (CMD_ID_5 >> 8);
+    can_3508_send_data2[1] = CMD_ID_5;
+    can_3508_send_data2[2] = (CMD_ID_6 >> 8);
+    can_3508_send_data2[3] = CMD_ID_6;
+    can_3508_send_data2[4] = 0;
+    can_3508_send_data2[5] = 0;
+    can_3508_send_data2[6] = 0;
+    can_3508_send_data2[7] = 0;
+    HAL_CAN_AddTxMessage(&hcan1, &RM3508_tx_message2, can_3508_send_data2, &send_mail_box01);
+}
 /// @brief HT04电机启动函数
 /// @param Target_hcan can输出句柄
 /// @param id 电机id号
@@ -263,13 +283,22 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
             FPS.M3508_M3++;
             break;
         }
-        case CAN_3508_M4_ID:
+        case CAN_3508_M5_ID:
         {
-            motor_Date[3].back_position    =		rx_data_can1[0]<<8 | rx_data_can1[1];
-			motor_Date[3].back_motor_speed =		rx_data_can1[2]<<8 | rx_data_can1[3];
-			motor_Date[3].back_current     = 	    rx_data_can1[4]<<8 | rx_data_can1[5];
-            continue_motor_pos(&motor_Date[3]);            
+            motor_Date[4].back_position    =		rx_data_can1[0]<<8 | rx_data_can1[1];
+			motor_Date[4].back_motor_speed =		rx_data_can1[2]<<8 | rx_data_can1[3];
+			motor_Date[4].back_current     = 	    rx_data_can1[4]<<8 | rx_data_can1[5];
+            continue_motor_pos(&motor_Date[4]);            
             FPS.Striker_3508++;
+            break;
+        }
+        case CAN_3508_M6_ID:
+        {
+            motor_Date[5].back_position    =		rx_data_can1[0]<<8 | rx_data_can1[1];
+			motor_Date[5].back_motor_speed =		rx_data_can1[2]<<8 | rx_data_can1[3];
+			motor_Date[5].back_current     = 	    rx_data_can1[4]<<8 | rx_data_can1[5];
+            continue_motor_pos(&motor_Date[5]);            
+            //FPS.Striker_3508++;
             break;
         }
         default:

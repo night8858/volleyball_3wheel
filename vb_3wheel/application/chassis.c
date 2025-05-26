@@ -1,3 +1,26 @@
+
+// ██╗    ██╗  ██╗  ██╗ ███████╗ ███████╗ ██╗
+// ██║    ██║  ██║  ██║ ██╔════╝ ██╔════╝ ██║
+// ██║ ██╗ ██║ ███████║ ██████╗  ██████╗  ██║
+// ██║ ╚██╗██║ ██╔══██║ ██╔══╝   ██╔══╝   ██║
+// ╚██╗╚████║  ██║  ██║ ███████╗ ███████╗ ███████╗
+//  ╚═╝ ╚═══╝  ╚═╝  ╚═╝ ╚══════╝ ╚══════╝ ╚══════╝
+
+/*
+ *   █████████████╗   ███████████╗     ████████████╗
+ *   ╚════██╔═════╝  ██╔════════██╗    ██╔═════════╝
+ *        ██║        ██║        ██║    ██║
+ *        ██║        ██║        ██║    ██║
+ *        ██║        ██║        ██║    ██║█████████╗
+ *        ██║        ██║        ██║    ██╔═════════╝
+ *        ██║        ██║        ██║    ██║
+ *        ██║        ██║        ██║    ██║
+ *        ██║        ╚███████████╔╝    ████████████╗
+ *        ╚═╝         ╚══════════╝     ╚═══════════╝
+ *  Version    Date            Author          Modification
+ *  V1.0.0     2024            night8858
+ */
+
 #include "main.h"
 
 #include "pid.h"
@@ -13,6 +36,7 @@
 #include "Monitor.h"
 #include "pc_interface.h"
 #include "tracking.h"
+#include "sensor.h"
 
 #include "cmsis_os.h"
 #include "FreeRTOS.h"
@@ -56,33 +80,37 @@
 #define gen_3 1.73205f
 #define RofCenter 0.4067f // 轮子中心距
 
+extern volatile uint8_t imu_flag;
+extern int ops9_flag;
+
 extern RC_ctrl_t rc_ctrl;
 extern UART_HandleTypeDef huart1;
 extern s_IMU_all_Value IMU_All_Value;       // 储存imu数据结构体
 extern s_robo_Mode_Setting robot_StateMode; // 储存机器人当前模式
 extern s_task_flags task_flags;             // 引用任务标志结构体
-extern s_Dji_motor_data_t motor_Date[4];    // 储存电机数据结构体
+extern s_Dji_motor_data_t motor_Date[6];    // RM电机回传数据结构体
 extern s_tracking_data_t tracking_data;
+extern s_ops9_data_t ops9_data; // ops9数据结构体
 
 extern chassis_control_t chassis_control;
 extern s_pid_absolute_t chassis_M3508_pid_speed;
 extern s_pid_absolute_t chassis_M3508_pid_angle;
 
-#define ecd_format(ecd)         \
-    {                           \
-        if ((ecd) > ECD_RANGE)  \
-            (ecd) -= ECD_RANGE; \
-        else if ((ecd) < 0)     \
-            (ecd) += ECD_RANGE; \
-    }
+extern serve_ball_t serve_state; // 发球状态机
+
+s_pid_absolute_t chassis_serve_pos_pid;
+
+static int chassis_stop_flag = 0; // 底盘停止标志位
+static uint8_t ops9_clear_flag = 0;
 
 static int16_t rc_dead_zone(int16_t rc_data);
+static void ops9_data_clear_check(void);
+static void chassis_keep_straight(int ops9_flag);
 
-// static fp32 M6020_PID_calc(M6020_PID_t *pid, fp32 get, fp32 set, fp32 error_delta);
-// static void M6020_PID_init(M6020_PID_t *pid, fp32 maxout, fp32 max_iout, fp32 kp, fp32 ki, fp32 kd);
-// static void M6020_motor_relative_angle_control(motor_6020_t *gimbal_motor);
-// static void motor_feedback_update(chassis_control_t *feedback_update);
-// static void M6020_PID_clear(M6020_PID_t *M6020_pid_clear);
+static void ACTION_chassis_recive_ball(chassis_control_t *chassis_control);
+static void ACTION_chassis_serve_a_ball(chassis_control_t *chassis_control);
+static void ACTION_keep_ball_in_center(chassis_control_t *chassis_control);
+static void ACTION_chassis_stop(chassis_control_t *chassis_control);
 
 // 电机数据的初始化
 void chassis_init(chassis_control_t *init)
@@ -105,12 +133,13 @@ void chassis_init(chassis_control_t *init)
         pid_abs_param_init(&init->M3508_pid_move_speed[i], M3505_MOTOR_MOVE_SPEED_PID_KP, M3505_MOTOR_MOVE_SPEED_PID_KI, M3505_MOTOR_MOVE_SPEED_PID_KD, M3505_MOTOR_MOVE_SPEED_PID_MAX_IOUT, M3505_MOTOR_MOVE_SPEED_PID_MAX_OUT);
     }
     pid_abs_param_init(&init->chassis_pid_anglespeed, CHASSIS_ANGLE_SPEED_PID_KP, CHASSIS_ANGLE_SPEED_PID_KI, CHASSIS_ANGLE_SPEED_PID_KD, CHASSIS_ANGLE_SPEED_PID_MAX_IOUT, CHASSIS_ANGLE_SPEED_PID_MAX_OUT);
+    pid_abs_param_init(&chassis_serve_pos_pid, 6, 0, 0, 200, 4000); ////发球追踪的pid
 
     tracking_init(&tracking_data);
 
-    first_order_filter_init(&init->chassis_cmd_slow_set_vx, 0.002f, chassis_x_order_filter);
-    first_order_filter_init(&init->chassis_cmd_slow_set_vy, 0.002f, chassis_y_order_filter);
-    first_order_filter_init(&init->chassis_cmd_slow_set_vw, 0.002f, chassis_w_order_filter);
+    first_order_filter_init(&init->chassis_cmd_slow_set_vx, 0.008f, chassis_x_order_filter);
+    first_order_filter_init(&init->chassis_cmd_slow_set_vy, 0.008f, chassis_y_order_filter);
+    first_order_filter_init(&init->chassis_cmd_slow_set_vw, 0.008f, chassis_w_order_filter);
 
     // 底盘速度位置数据初始化
     for (uint8_t i = 0; i < motor_3505_num; i++)
@@ -132,6 +161,8 @@ void chassis_init(chassis_control_t *init)
     init->chassis_yaw = *(init->chassis_INS_angle + INS_YAW_ADDRESS_OFFSET); // 底盘姿态角度初始化
 
     // 底盘初始化完成标志
+    // 设定底盘角度不变
+    chassis_control.chassis_yaw_set = 0;
     task_flags.chassis_Init_flag = 1;
 }
 
@@ -154,12 +185,6 @@ void chassis_feedback_update(chassis_control_t *feedback_update)
     {
         return;
     }
-    // 数据更新,各个电机的速度数据
-    // for (uint8_t i = 0; i < motor_3505_num; i++)
-    // {
-    //     feedback_update->chassis_motor.M3508[i].motor_speed = feedback_update->chassis_motor.M3508[i].chassis_motor_measure->back_motor_speed;
-    //     feedback_update->chassis_motor.M3508[i].serial_position = feedback_update->chassis_motor.M3508[i].chassis_motor_measure->serial_position;
-    // }
 
     // 更新底盘纵向速度 x， 平移速度y，旋转速度wz，坐标系为右手系
     feedback_update->vx = motor_Date[0].back_motor_speed * sqrt(3) / 2 - motor_Date[1].back_motor_speed * sqrt(3) / 2;
@@ -247,21 +272,21 @@ void rc_to_motor_set(chassis_control_t *chassis_control)
         chassis_control->chassis_vy_ch = 0.0f;
         chassis_control->chassis_wz_ch = 0.0f;
 
-        chassis_control->chassis_vx_ch = rc_dead_zone(chassis_control->chassis_RC->rc.ch[3]) * CHASSIS_VX_KP;
-        chassis_control->chassis_vy_ch = rc_dead_zone(-(chassis_control->chassis_RC->rc.ch[2])) * CHASSIS_VY_KP;
-        chassis_control->chassis_wz_ch = rc_dead_zone(chassis_control->chassis_RC->rc.ch[0]) * CHASSIS_WZ_KP;
+        chassis_control->chassis_vx_ch = rc_dead_zone(chassis_control->chassis_RC->rc.ch[3]) * 12;
+        chassis_control->chassis_vy_ch = rc_dead_zone(-(chassis_control->chassis_RC->rc.ch[2])) * 12;
+        chassis_control->chassis_wz_ch = rc_dead_zone(chassis_control->chassis_RC->rc.ch[0]) * 10;
 
         first_order_filter_cali(&chassis_control->chassis_cmd_slow_set_vx, chassis_control->chassis_vx_ch);
         first_order_filter_cali(&chassis_control->chassis_cmd_slow_set_vy, chassis_control->chassis_vy_ch);
         first_order_filter_cali(&chassis_control->chassis_cmd_slow_set_vw, chassis_control->chassis_wz_ch);
 
         // 停止区间
-        if (chassis_control->chassis_vx_ch < 12 * CHASSIS_VX_KP && chassis_control->chassis_vx_ch < -12 * CHASSIS_VY_KP)
+        if (chassis_control->chassis_vx_ch < 12 * 12 && chassis_control->chassis_vx_ch < -12 * 12)
         {
             chassis_control->chassis_vx_ch = 0.0f;
         }
 
-        if (chassis_control->chassis_vy_ch < 12 * CHASSIS_VX_KP && chassis_control->chassis_vy_ch < -12 * CHASSIS_VY_KP)
+        if (chassis_control->chassis_vy_ch < 12 * 12 && chassis_control->chassis_vy_ch < -12 * 12)
         {
             chassis_control->chassis_vy_ch = 0.0f;
         }
@@ -274,37 +299,31 @@ void rc_to_motor_set(chassis_control_t *chassis_control)
 // 运动计算
 void chassis_movement_calc(chassis_control_t *chassis_control)
 {
-    float stop_angle[3] = 0.0f;
     // 此处为遥控器控制的方式
     if (chassis_control == NULL)
     {
         return;
     }
-    for (uint8_t i = 0; i < motor_3505_num; i++)
+
+    if (chassis_stop_flag == 0)
     {
-        stop_angle[i] = motor_Date[i].serial_motor_ang;
+        for (uint8_t i = 0; i < motor_3505_num; i++)
+        {
+            chassis_control->stop_angle[i] = motor_Date[i].serial_motor_ang;
+        }
     }
 
-    fp32 angle_set = 0.0f;
     float motor_speed_calc[motor_3505_num] = {0.0f, 0.0f, 0.0f};
-    fp32 delat_angle = 0.0f;
-
-    chassis_control->chassis_pid_anglespeed.NowError = 0 - IMU_All_Value.yaw.yawAngV;
-    PID_AbsoluteMode(&chassis_control->chassis_pid_anglespeed);
-    chassis_control->wz_set = chassis_control->chassis_cmd_slow_set_vw.out + chassis_control->chassis_pid_anglespeed.PIDout;
-
+    ops9_data_clear_check();          // ops9有数据后给yaw角度赋值为0，设为初始位置
+    chassis_keep_straight(ops9_flag); // 保持底盘水平
     ////////////////////////////////////////////////////////////////////////////////
     if (robot_StateMode.roboMode == ARTIFICAL_CHASSIS)
     {
-        // calculate rotation speed
-        // 计算旋转的角速度,输入值与角度补正的和
-        // speed limit
-
         // 计算各个电机速度,三全向解算
         //        motor_speed_calc[0] = RofCenter * chassis_control->wz_set / 3 + chassis_control->vx_set * sqrt(3) / 3 - chassis_control->vy_set / 3;
         //        motor_speed_calc[1] = RofCenter * chassis_control->wz_set / 3 - chassis_control->vx_set * sqrt(3) / 3 - chassis_control->vy_set / 3;
         //        motor_speed_calc[2] = RofCenter * chassis_control->wz_set / 3 + chassis_control->vy_set * 2 / 3;
-
+        chassis_stop_flag = 0;
         // 计算各个电机速度,三全向解算
         motor_speed_calc[0] = RofCenter * chassis_control->wz_set + chassis_control->vx_set * sqrt(3) / 2 - chassis_control->vy_set / 2;
         motor_speed_calc[1] = RofCenter * chassis_control->wz_set - chassis_control->vx_set * sqrt(3) / 2 - chassis_control->vy_set / 2;
@@ -317,33 +336,36 @@ void chassis_movement_calc(chassis_control_t *chassis_control)
 
         chassis_speed_pid_calc(chassis_control);
         CAN_cmd_3508(motor_Date[0].out_current, motor_Date[1].out_current, motor_Date[2].out_current, motor_Date[3].out_current);
-        task_flags.hit_ball_chassis_stop_flag == 1;
-
-        // 制动时保持位置使用的参数
-        for (uint8_t i = 0; i < motor_3505_num; i++)
-        {
-            motor_Date[i].target_motor_ang = motor_Date[i].serial_motor_ang;
-        }
+        // task_flags.hit_ball_chassis_stop_flag == 1;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     else if (robot_StateMode.roboMode == ARTIFICAL_STRIKER)
     {
-
+        ACTION_chassis_serve_a_ball(chassis_control);
     }
 
     else if (robot_StateMode.roboMode == AUTO_RECEIVE_BALL)
     {
-        chassis_volleyball_track();
+        for (uint8_t i = 0; i < motor_3505_num; i++)
+        {
+            motor_Date[i].target_motor_speed = motor_speed_calc[i];
+        }
+        ACTION_chassis_recive_ball(chassis_control);
     }
+
+    else if (robot_StateMode.roboMode == ROBOT_DEBUG)
+    {
+        ACTION_keep_ball_in_center(chassis_control);
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////
     else if (robot_StateMode.roboMode == MODE_STOP || robot_StateMode.roboMode == ARTIFICAL_BAT)
     {
-
         // 非自动模式进行制动
+        // chassis_control->chassis_yaw_set = IMU_All_Value.yaw.yawAng;
         task_flags.hit_ball_chassis_stop_flag == 1;
-        chassis_stop_pid_calc(chassis_control);
-        CAN_cmd_3508(motor_Date[0].out_current, motor_Date[1].out_current, motor_Date[2].out_current, motor_Date[3].out_current);
+        ACTION_chassis_stop(chassis_control);
     }
 }
 
@@ -361,165 +383,91 @@ static int16_t rc_dead_zone(int16_t rc_data)
 }
 
 /**
+ * @brief 底盘保持直线运动的控制函数
+ *
+ * @param ops9_flag ops9标志位，用于判断是否启动直线控制
+ *
+ * @details
+ * 当ops9_flag为1时，启动底盘直线控制：
+ * 1. 如果有旋转指令(chassis_wz_ch不为0)，更新目标航向角
+ * 2. 计算当前航向角误差并进行PID控制
+ * 3. 最终输出角速度为手动控制量与PID修正量之和
+ */
+void chassis_keep_straight(int ops9_flag)
+{
+    if (ops9_flag == 1) // ops9启动后
+    {
+        if (chassis_control.chassis_wz_ch != 0)
+        {
+            chassis_control.chassis_yaw_set = ops9_data.yaw;
+        }
+        // chassis_control.chassis_yaw_last = ops9_data.yaw;
+        chassis_control.chassis_pid_anglespeed.NowError = chassis_control.chassis_yaw_set - ops9_data.yaw;
+        PID_AbsoluteMode(&chassis_control.chassis_pid_anglespeed);
+    }
+
+    chassis_control.wz_set = chassis_control.chassis_wz_ch - chassis_control.chassis_pid_anglespeed.PIDout;
+}
+
+void ops9_data_clear_check(void)
+{
+    if (ops9_clear_flag == 1)
+    {
+        return;
+    }
+
+    if (ops9_flag == 1)
+    {
+        ops9_Zero_Clearing();
+        ops9_clear_flag = 1;
+    }
+}
+
+/**
  * @brief 执行机器人底盘发球动作控制
  * @param chassis_control 底盘控制结构体指针
  * @details 该函数实现了底盘发球时的运动控制:等待球拍任务执行完毕后进行控制
- *          
+ *
  */
 void ACTION_chassis_serve_a_ball(chassis_control_t *chassis_control)
 {
-    // 进行发球运动动作,由球拍发球位置决定
-    if (task_flags.hit_ball_chassis_move_flag == 1)
+    if (serve_state > 0 && serve_state < 5)
     {
-        float start_angle[3] = 0.0f;
-        // 记录初始位置
-        for (uint8_t i = 0; i < motor_3505_num; i++)
-        {
-            start_angle[i] = motor_Date[i].serial_motor_ang;
-        }
-        float nowspeed = 0.0f;
-        float MAXspeed = 6000.0f;
-
-        float target_distance_x = 10.0f;
-        float current_distance_x = 0.0f; // 当前位置与目标位置的差值
-        while (current_distance_x < target_distance_x)
-        {
-            float motor_speed_calc[3] = {0};
-            if (robot_StateMode.roboMode != ARTIFICAL_STRIKER)
-            {
-                break;
-            }
-
-            if (nowspeed < MAXspeed)
-            {
-                nowspeed += 50;
-            }
-
-            chassis_control->chassis_pid_anglespeed.NowError = 0 - IMU_All_Value.yaw.yawAngV;
-            PID_AbsoluteMode(&chassis_control->chassis_pid_anglespeed);
-            chassis_control->wz_set = chassis_control->chassis_cmd_slow_set_vw.out + chassis_control->chassis_pid_anglespeed.PIDout;
-            chassis_control->vx_set = nowspeed;
-
-            motor_speed_calc[0] = RofCenter * chassis_control->wz_set + chassis_control->vx_set * sqrt(3) / 2 - chassis_control->vy_set / 2;
-            motor_speed_calc[1] = RofCenter * chassis_control->wz_set - chassis_control->vx_set * sqrt(3) / 2 - chassis_control->vy_set / 2;
-            motor_speed_calc[2] = RofCenter * chassis_control->wz_set + chassis_control->vy_set;
-
-            for (uint8_t i = 0; i < motor_3505_num; i++)
-            {
-                motor_Date[i].target_motor_speed = motor_speed_calc[i];
-            }
-
-            current_distance_x = 0.2067731f * ((motor_Date[0].serial_motor_ang - start_angle[0]) / 360 - (motor_Date[1].serial_motor_ang - start_angle[1]) / 360);
-
-            chassis_speed_pid_calc(chassis_control);
-            CAN_cmd_3508(motor_Date[0].out_current, motor_Date[1].out_current, motor_Date[2].out_current, motor_Date[3].out_current);
-            osDelay(1);
-        }
-
-        task_flags.hit_ball_chassis_stop_flag = 1;
-        task_flags.hit_ball_chassis_move_flag = 0;
-        // for (uint8_t i = 0; i < motor_3505_num; i++)
-        // {
-        //     motor_Date[i].target_motor_ang = motor_Date[i].serial_motor_ang;
-        // }
-        // motor_Date[3].target_motor_ang = motor_Date[3].serial_motor_ang + 360.0f * 19;
+        ACTION_keep_ball_in_center(chassis_control);
     }
     else
     {
-
-        chassis_stop_pid_calc(chassis_control);
-        CAN_cmd_3508(motor_Date[0].out_current, motor_Date[1].out_current, motor_Date[2].out_current, motor_Date[3].out_current);
-    }
-    for (uint8_t i = 0; i < motor_3505_num; i++)
-    {
-        motor_Date[i].target_motor_ang = motor_Date[i].serial_motor_ang;
+        ACTION_chassis_stop(chassis_control);
     }
 }
 
+void ACTION_chassis_recive_ball(chassis_control_t *chassis_control)
+{
+    chassis_stop_flag = 0;   
+    chassis_volleyball_track();
+    chassis_speed_pid_calc(chassis_control);
+    CAN_cmd_3508(motor_Date[0].out_current, motor_Date[1].out_current, motor_Date[2].out_current, motor_Date[3].out_current);
+}
+
+void ACTION_keep_ball_in_center(chassis_control_t *chassis_control)
+{
+    chassis_stop_flag = 0;
+    keep_ball_in_center_track();
+    chassis_speed_pid_calc(chassis_control);
+    CAN_cmd_3508(motor_Date[0].out_current, motor_Date[1].out_current, motor_Date[2].out_current, motor_Date[3].out_current);
+}
+
+void ACTION_chassis_stop(chassis_control_t *chassis_control)
+{
+    chassis_stop_flag = 1;
+    for (size_t i = 0; i < 3; i++)
+    {
+        motor_Date[i].target_motor_ang = chassis_control->stop_angle[i];
+    }
+
+    chassis_stop_pid_calc(chassis_control);
+    CAN_cmd_3508(motor_Date[0].out_current, motor_Date[1].out_current, motor_Date[2].out_current, motor_Date[3].out_current);
+}
 // 自动模式运动计算
-/*
-不适用但有用的代码区
 
-// 编码值转为弧度制
-static fp32 motor_ecd_to_angle_change(uint16_t ecd, uint16_t offset_ecd)
-{
-    int32_t relative_ecd = ecd - offset_ecd;
-    //if (relative_ecd > 4096)
-    //{
-    //   relative_ecd -= 8191;
-    //}
-    //else if (relative_ecd < -4096)
-    //{
-    //   relative_ecd += 8191;
-    //}
-    return relative_ecd * MOTOR_ECD_TO_RAD;
-}
-
-// 6020的PID初始化
-static void M6020_PID_init(M6020_PID_t *pid, fp32 maxout, fp32 max_iout, fp32 kp, fp32 ki, fp32 kd)
-{
-    if (pid == NULL)
-    {
-        return;
-    }
-    pid->kp = kp;
-    pid->ki = ki;
-    pid->kd = kd;
-
-    pid->err = 0.0f;
-    pid->get = 0.0f;
-
-    pid->max_iout = max_iout;
-    pid->max_out = maxout;
-}
-
-// 6020的PID计算
-static fp32 M6020_PID_calc(M6020_PID_t *pid, fp32 get, fp32 set, fp32 error_delta)
-{
-    fp32 err;
-    if (pid == NULL)
-    {
-        return 0.0f;
-    }
-    pid->get = get;
-    pid->set = set;
-
-    err = set - get;
-    pid->err = rad_format(err);
-    pid->Pout = pid->kp * pid->err;
-    pid->Iout += pid->ki * pid->err;
-    pid->Dout = pid->kd * error_delta;
-    abs_limit(&pid->Iout, pid->max_iout);
-    pid->out = pid->Pout + pid->Iout + pid->Dout;
-    abs_limit(&pid->out, pid->max_out);
-    return pid->out;
-}
-
-// 清除6020的PID
-static void M6020_PID_clear(M6020_PID_t *M6020_pid_clear)
-{
-    if (M6020_pid_clear == NULL)
-    {
-        return;
-    }
-
-    M6020_pid_clear->err = M6020_pid_clear->set = M6020_pid_clear->get = 0.0f;
-    M6020_pid_clear->out = M6020_pid_clear->Pout = M6020_pid_clear->Iout = M6020_pid_clear->Dout = 0.0f;
-}
-
-
-// 6020的pid计算
-static void M6020_motor_relative_angle_control(motor_6020_t *gimbal_motor)
-{
-    if (gimbal_motor == NULL)
-    {
-        return;
-    }
-    int flag = 1;
-    // 角度环，速度环串级pid
-
-    gimbal_motor->motor_gyro_set = M6020_PID_calc(&gimbal_motor->gimbal_motor_relative_angle_pid, gimbal_motor->serial_angle ,gimbal_motor->relative_angle_set, gimbal_motor->motor_gyro);
-    gimbal_motor->current_set = PID_calc(&gimbal_motor->gimbal_motor_gyro_pid, gimbal_motor->motor_gyro, gimbal_motor->motor_gyro_set); // 控制值赋值
-    gimbal_motor->given_current = (int16_t)(gimbal_motor->current_set);
-}
-*/
+// 似乎击球后球拍控制有问题了，得大改

@@ -32,17 +32,17 @@
 #define M3505_MOTOR_ANGLE_PID_MAX_OUT 14000.0f
 #define M3505_MOTOR_ANGLE_PID_MAX_IOUT 4000.0f
 
-#define CHASSIS_ANGLE_PID_KP -00.0f
-#define CHASSIS_ANGLE_PID_KI 0.0f
-#define CHASSIS_ANGLE_PID_KD 45.0f
-#define CHASSIS_ANGLE_PID_MAX_OUT 12000.0f
-#define CHASSIS_ANGLE_PID_MAX_IOUT 8000.0f
+// #define CHASSIS_ANGLE_PID_KP -0.0f
+// #define CHASSIS_ANGLE_PID_KI 0.0f
+// #define CHASSIS_ANGLE_PID_KD 45.0f
+// #define CHASSIS_ANGLE_PID_MAX_OUT 12000.0f
+// #define CHASSIS_ANGLE_PID_MAX_IOUT 8000.0f
 
-#define CHASSIS_ANGLE_SPEED_PID_KP -300.0f
-#define CHASSIS_ANGLE_SPEED_PID_KI 0.1f
+#define CHASSIS_ANGLE_SPEED_PID_KP 390.0f
+#define CHASSIS_ANGLE_SPEED_PID_KI 0.6f
 #define CHASSIS_ANGLE_SPEED_PID_KD 0.0f
-#define CHASSIS_ANGLE_SPEED_PID_MAX_OUT 0.5f
-#define CHASSIS_ANGLE_SPEED_PID_MAX_IOUT 8000.0f
+#define CHASSIS_ANGLE_SPEED_PID_MAX_OUT 2000.f
+#define CHASSIS_ANGLE_SPEED_PID_MAX_IOUT 0.4f
 
 #define M6020_MOTOR_SPEED_PID_KP 2.0f
 #define M6020_MOTOR_SPEED_PID_KI 0.0f
@@ -192,6 +192,9 @@ typedef struct
     int16_t chassis_vy_ch;
     int16_t chassis_wz_ch;
 
+    float ops9_pos_y_set;
+    float ops9_pos_x_set;
+    
     float chassis_forward_postion; // chassis forward speed, unit m/s.底盘前进距离 单位m
     float chassis_shift_postion; // chassis forward speed, unit m/s.底盘平移距离 单位m
     
@@ -207,7 +210,7 @@ typedef struct
     fp32 vy_min_speed; // max right speed, unit m/s.右方向最大速度 单位m/s
 
     float chassis_start_ang[3];
-
+    float stop_angle[3];
 
 } chassis_control_t;
 

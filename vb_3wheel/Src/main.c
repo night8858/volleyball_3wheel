@@ -40,6 +40,7 @@
 #include "remote_control.h"
 #include "bat_control.h"
 #include "robot.h"
+#include "sensor.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -113,13 +114,14 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
   MX_TIM4_Init();
+  MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
     delay_init();
     can_filter_init();
     MX_USB_DEVICE_Init();
     remote_control_init();
     buzzer_off();
-
+    ops9_init();
     HAL_Delay(500);
     HAL_TIM_Base_Start(&htim4);
     

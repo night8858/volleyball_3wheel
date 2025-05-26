@@ -3,40 +3,26 @@
 
 #include "stm32f4xx_hal.h"
 #include "stdio.h"
+#include "bat_control.h"
 
 typedef struct
 {
-    union
-    {
-        uint8_t          bit[4];
-        float            data;
-    }x_hikvision;
-    union
-    {
-        uint8_t          bit[4];
-        float            data;
-    }y_hikvision;
-    union
-    {
-        uint8_t          bit[4];
-        float            data;
-    }z_hikvision;
 
     union
     {
         uint8_t          bit[4];
         float            data;
-    }x_usbcam;
+    }x;
     union
     {
         uint8_t          bit[4];
         float            data;
-    }y_usbcam;
+    }y;
     union
     {
         uint8_t          bit[4];
         float            data;
-    }z_usbcam;
+    }z;
 
     union
     {
@@ -53,6 +39,7 @@ typedef struct
 
 typedef enum
 {
+    
     empty = 0, // 无排球
     come = 1,  // 排球靠近
     gone = 2,  // 排球远离
@@ -74,16 +61,18 @@ typedef enum
  */
 typedef struct
 {
-    float x_hikvision;
-    float y_hikvision;
-    float z_hikvision;
-    float z_hikvision_last;
 
-    float x_usbcam;   
-    float y_usbcam;
-    float z_usbcam;
-    float z_usbcam_last;
+    float pos_ball_x;
+    float pos_ball_y;
+    float pos_ball_z;
 
+    Point ball_pos_bat;
+    Point ball_pos_bat_60;
+
+    float judeg_hit;
+    float ball_hight_;
+    uint8_t  hasvaild;     //确定是否有球
+    
     cam_ball_state_e hikcam_ball_judje;
     cam_ball_state_e usbcam_ball_judje;
 

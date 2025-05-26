@@ -80,6 +80,7 @@
 "ins_task\chassis_task.o"
 "ins_task\debug_task..o"
 "ins_task\monitor_task.o"
+"ins_task\striker_task.o"
 "ins_task\usbd_core.o"
 "ins_task\usbd_ctlreq.o"
 "ins_task\usbd_ioreq.o"
