@@ -64,7 +64,7 @@
 
 
 //击球拍击打用
-#define STRIKER_3508_ANGLE_PID_KP   17.0f    //
+#define STRIKER_3508_ANGLE_PID_KP   19.0f    //
 #define STRIKER_3508_ANGLE_PID_KI   0.0f    //
 #define STRIKER_3508_ANGLE_PID_KD   2.1f    //
 #define STRIKER_3508_ANGLE_PID_MAX_IOUT 12000.0f //  
@@ -80,20 +80,24 @@
 #define STRIKER_3508_SPEED_INIT_PID_KP   42.0f    //
 #define STRIKER_3508_SPEED_INIT_PID_KI   0.0f    //
 #define STRIKER_3508_SPEED_INIT_PID_KD   8.0f
-#define STRIKER_3508_SPEED_INIT_PID_MAX_IOUT 8000.0f //  
+#define STRIKER_3508_SPEED_INIT_PID_MAX_IOUT 9000.0f //  
 #define STRIKER_3508_SPEED_INIT_PID_MAX_OUT 8000.0f // 
 
 
 
 typedef enum {
+
+    BAT_INIT,              //球拍回到初始状态
     BAT_IDLE,
     BAT_HITTING,
     BAT_COOLDOWN
+
 } bat_state_t;           //球拍打球状态机
 
 typedef enum 
 {
-    SERVE_IDLE,          // 空闲状态，等待指令
+    SEAVE_INIT,          // 准备击球
+    SERVE_IDLE,            // 空闲状态，等待指令
     BAT_HITTING_UP1,      // 球拍向上击球
     WITE_FOR_BALL,            // 准备冷却    
     BAT_HITTING_UP2,      // 球拍向上击球
@@ -102,6 +106,7 @@ typedef enum
     STRIKER_RETURNING,   // 击球杆复位
     SERVE_COOLDOWN,       // 冷却状态
     OVERTIME_RETURNING     // 超时复位
+    
 }serve_ball_t;           //击球发球状态机
 
 typedef enum 

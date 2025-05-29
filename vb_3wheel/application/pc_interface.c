@@ -169,9 +169,9 @@ Point cam_space2bot_speace_60(float x, float y, float z )
     double z_rotated_z = z;
     
     // 再应用X轴旋转
-    x1 = z_rotated_x  - 0.021;
-    y1 = z_rotated_y * cos_alpha - z_rotated_z * sin_alpha  -0.272;
-    z1 = z_rotated_y * sin_alpha + z_rotated_z * cos_alpha  +0.007;
+    x1 = z_rotated_x  ;
+    y1 = z_rotated_y * cos_alpha - z_rotated_z * sin_alpha  -0.282;
+    z1 = z_rotated_y * sin_alpha + z_rotated_z * cos_alpha  -0.2;
 
 	Point temp;	
 	temp.x = x1;

@@ -84,10 +84,12 @@ void debug_task(void const *argument)
     //                 bat_control.CurrentPoint.z);
 
     // 调试视觉数据
-    uart_dma_printf(&huart1, "%4.3f, %4.3f ,%4.3f \n",
+    uart_dma_printf(&huart1, "%4.3f, %4.3f ,%4.3f,%4.3f ,%4.3f \n",
                     s_visionInform.ball_pos_bat.x,
                     s_visionInform.ball_pos_bat.y,
-                    s_visionInform.ball_pos_bat.z);
+                    s_visionInform.ball_pos_bat.z,
+                    chassis_control.vx_set,
+                    chassis_control.vy_set);
 
     // 调试接发球视觉数据
     // uart_dma_printf(&huart1, "%4.3f, %4.3f ,%4.3f ,%4.3f\n",

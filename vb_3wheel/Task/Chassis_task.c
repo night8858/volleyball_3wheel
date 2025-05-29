@@ -49,7 +49,7 @@ void chassis_task(void const *argument)
     // rc_ctrl.rc.ch[0], rc_ctrl.rc.ch[1], rc_ctrl.rc.ch[2]);
     // 选择进入控制模式
     chassisLastWakeTime = xTaskGetTickCount();
-    mode_switch();
+    //mode_switch();
     chassis_feedback_update(&chassis_control);
 
     if (imu_flag)

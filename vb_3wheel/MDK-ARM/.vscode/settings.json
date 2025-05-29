@@ -118,6 +118,7 @@
     "cmath": "c",
     "tracking.h": "c",
     "usart.h": "c",
-    "bsp_rc.h": "c"
+    "bsp_rc.h": "c",
+    "sensor.h": "c"
   }
 }

@@ -47,7 +47,7 @@
          \              ^y             /
           \             |             /
            \            |            /
-            \           +----->y    /
+            \           +----->x    /
              \                     /
               \                   /
                \                 /
@@ -99,13 +99,21 @@ extern s_pid_absolute_t chassis_M3508_pid_angle;
 extern serve_ball_t serve_state; // 发球状态机
 
 s_pid_absolute_t chassis_serve_pos_pid;
+s_pid_absolute_t chassis_space_limite_pid;
 
+move_space_state_e move_space_state;     // 移动空间状态机
+chassis_move_state_e chassis_move_state; // 底盘运动状态机
+
+/// @brief  内部调用区///////////////////////////////
 static int chassis_stop_flag = 0; // 底盘停止标志位
 static uint8_t ops9_clear_flag = 0;
 
 static int16_t rc_dead_zone(int16_t rc_data);
 static void ops9_data_clear_check(void);
 static void chassis_keep_straight(int ops9_flag);
+static void chasssis_move_in_limited_space(float R);
+
+static void chassis_move(chassis_control_t *chassis_control);
 
 static void ACTION_chassis_recive_ball(chassis_control_t *chassis_control);
 static void ACTION_chassis_serve_a_ball(chassis_control_t *chassis_control);
@@ -134,6 +142,8 @@ void chassis_init(chassis_control_t *init)
     }
     pid_abs_param_init(&init->chassis_pid_anglespeed, CHASSIS_ANGLE_SPEED_PID_KP, CHASSIS_ANGLE_SPEED_PID_KI, CHASSIS_ANGLE_SPEED_PID_KD, CHASSIS_ANGLE_SPEED_PID_MAX_IOUT, CHASSIS_ANGLE_SPEED_PID_MAX_OUT);
     pid_abs_param_init(&chassis_serve_pos_pid, 6, 0, 0, 200, 4000); ////发球追踪的pid
+
+    pid_abs_param_init(&chassis_space_limite_pid, 0.7, 0, 0, 200, 4000); // 限制移动空间的pid
 
     tracking_init(&tracking_data);
 
@@ -236,25 +246,6 @@ void chassis_speed_pid_calc(chassis_control_t *control_loop)
     }
 }
 
-// 电机主控制循环
-/**
- * @brief 发送电机控制指令，处理底盘电机的PID控制和电流输出
- * @param control_loop 底盘控制结构体指针，包含电机控制参数
- * @note 根据机器人状态模式(roboMode)执行不同的控制逻辑:
- *       - 模式3: 执行速度环PID控制
- *       - 非模式2/3: 执行位置环制动控制
- *       最后通过CAN总线发送控制指令给电机
- */
-void motor_control_send(chassis_control_t *control_loop)
-{
-    if (control_loop == NULL)
-    {
-        return;
-    }
-    // 此处出现的4号电机是击球电机
-    CAN_cmd_3508(motor_Date[0].out_current, motor_Date[1].out_current, motor_Date[2].out_current, motor_Date[3].out_current);
-}
-
 // 遥控器数据转电机数据
 void rc_to_motor_set(chassis_control_t *chassis_control)
 {
@@ -272,8 +263,8 @@ void rc_to_motor_set(chassis_control_t *chassis_control)
         chassis_control->chassis_vy_ch = 0.0f;
         chassis_control->chassis_wz_ch = 0.0f;
 
-        chassis_control->chassis_vx_ch = rc_dead_zone(chassis_control->chassis_RC->rc.ch[3]) * 12;
-        chassis_control->chassis_vy_ch = rc_dead_zone(-(chassis_control->chassis_RC->rc.ch[2])) * 12;
+        chassis_control->chassis_vx_ch = rc_dead_zone((-chassis_control->chassis_RC->rc.ch[2])) * 16;
+        chassis_control->chassis_vy_ch = rc_dead_zone((-chassis_control->chassis_RC->rc.ch[3])) * 16;
         chassis_control->chassis_wz_ch = rc_dead_zone(chassis_control->chassis_RC->rc.ch[0]) * 10;
 
         first_order_filter_cali(&chassis_control->chassis_cmd_slow_set_vx, chassis_control->chassis_vx_ch);
@@ -291,6 +282,15 @@ void rc_to_motor_set(chassis_control_t *chassis_control)
             chassis_control->chassis_vy_ch = 0.0f;
         }
 
+        if (chassis_control->chassis_vx_ch != 0 || chassis_control->chassis_vy_ch != 0)
+        {
+            chassis_move_state = IS_MOVEING;
+        }
+        else
+        {
+            chassis_move_state = NOT_MOVEING;
+        }
+
         chassis_control->vx_set = chassis_control->chassis_cmd_slow_set_vx.out;
         chassis_control->vy_set = chassis_control->chassis_cmd_slow_set_vy.out;
     }
@@ -305,13 +305,12 @@ void chassis_movement_calc(chassis_control_t *chassis_control)
         return;
     }
 
-    if (chassis_stop_flag == 0)
-    {
+    // 电机速度计算
+    
         for (uint8_t i = 0; i < motor_3505_num; i++)
         {
             chassis_control->stop_angle[i] = motor_Date[i].serial_motor_ang;
         }
-    }
 
     float motor_speed_calc[motor_3505_num] = {0.0f, 0.0f, 0.0f};
     ops9_data_clear_check();          // ops9有数据后给yaw角度赋值为0，设为初始位置
@@ -323,20 +322,8 @@ void chassis_movement_calc(chassis_control_t *chassis_control)
         //        motor_speed_calc[0] = RofCenter * chassis_control->wz_set / 3 + chassis_control->vx_set * sqrt(3) / 3 - chassis_control->vy_set / 3;
         //        motor_speed_calc[1] = RofCenter * chassis_control->wz_set / 3 - chassis_control->vx_set * sqrt(3) / 3 - chassis_control->vy_set / 3;
         //        motor_speed_calc[2] = RofCenter * chassis_control->wz_set / 3 + chassis_control->vy_set * 2 / 3;
-        chassis_stop_flag = 0;
-        // 计算各个电机速度,三全向解算
-        motor_speed_calc[0] = RofCenter * chassis_control->wz_set + chassis_control->vx_set * sqrt(3) / 2 - chassis_control->vy_set / 2;
-        motor_speed_calc[1] = RofCenter * chassis_control->wz_set - chassis_control->vx_set * sqrt(3) / 2 - chassis_control->vy_set / 2;
-        motor_speed_calc[2] = RofCenter * chassis_control->wz_set + chassis_control->vy_set;
 
-        for (uint8_t i = 0; i < motor_3505_num; i++)
-        {
-            motor_Date[i].target_motor_speed = motor_speed_calc[i];
-        }
-
-        chassis_speed_pid_calc(chassis_control);
-        CAN_cmd_3508(motor_Date[0].out_current, motor_Date[1].out_current, motor_Date[2].out_current, motor_Date[3].out_current);
-        // task_flags.hit_ball_chassis_stop_flag == 1;
+        chassis_move(chassis_control);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -356,7 +343,44 @@ void chassis_movement_calc(chassis_control_t *chassis_control)
 
     else if (robot_StateMode.roboMode == ROBOT_DEBUG)
     {
-        ACTION_keep_ball_in_center(chassis_control);
+        // ACTION_keep_ball_in_center(chassis_control);
+        chassis_control->chassis_vx_ch = 0.0f;
+        chassis_control->chassis_vy_ch = 0.0f;
+        chassis_control->chassis_wz_ch = 0.0f;
+
+        chassis_control->chassis_vx_ch = rc_dead_zone(chassis_control->chassis_RC->rc.ch[2]) * 16;
+        chassis_control->chassis_vy_ch = rc_dead_zone((chassis_control->chassis_RC->rc.ch[3])) * 16;
+        chassis_control->chassis_wz_ch = rc_dead_zone(chassis_control->chassis_RC->rc.ch[0]) * 10;
+
+        first_order_filter_cali(&chassis_control->chassis_cmd_slow_set_vx, chassis_control->chassis_vx_ch);
+        first_order_filter_cali(&chassis_control->chassis_cmd_slow_set_vy, chassis_control->chassis_vy_ch);
+        first_order_filter_cali(&chassis_control->chassis_cmd_slow_set_vw, chassis_control->chassis_wz_ch);
+
+        // 停止区间
+        if (chassis_control->chassis_vx_ch < 12 * 12 && chassis_control->chassis_vx_ch < -12 * 12)
+        {
+            chassis_control->chassis_vx_ch = 0.0f;
+        }
+
+        if (chassis_control->chassis_vy_ch < 12 * 12 && chassis_control->chassis_vy_ch < -12 * 12)
+        {
+            chassis_control->chassis_vy_ch = 0.0f;
+        }
+
+        if (chassis_control->chassis_vx_ch != 0 || chassis_control->chassis_vy_ch != 0)
+        {
+            chassis_move_state = IS_MOVEING;
+        }
+        else
+        {
+            chassis_move_state = NOT_MOVEING;
+        }
+
+        chassis_control->vx_set = chassis_control->chassis_cmd_slow_set_vx.out;
+        chassis_control->vy_set = chassis_control->chassis_cmd_slow_set_vy.out;
+
+        chasssis_move_in_limited_space(2000);
+        chassis_move(chassis_control);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////
@@ -367,6 +391,26 @@ void chassis_movement_calc(chassis_control_t *chassis_control)
         task_flags.hit_ball_chassis_stop_flag == 1;
         ACTION_chassis_stop(chassis_control);
     }
+}
+
+void chassis_move(chassis_control_t *chassis_control)
+{
+    float motor_speed_calc[motor_3505_num] = {0.0f, 0.0f, 0.0f};
+    // motor_speed_calc[0] = RofCenter * chassis_control->wz_set - chassis_control->vy_set * sqrt(3) / 2 - chassis_control->vx_set / 2;
+    // motor_speed_calc[1] = RofCenter * chassis_control->wz_set - chassis_control->vy_set * sqrt(3) / 2 + chassis_control->vx_set / 2;
+    // motor_speed_calc[2] = RofCenter * chassis_control->wz_set - chassis_control->vx_set;
+
+    motor_speed_calc[0] = RofCenter * chassis_control->wz_set / 3 + (-chassis_control->vy_set) * sqrt(3) / 3 - chassis_control->vx_set / 3;
+    motor_speed_calc[1] = RofCenter * chassis_control->wz_set / 3 - (-chassis_control->vy_set) * sqrt(3) / 3 - chassis_control->vx_set / 3;
+    motor_speed_calc[2] = RofCenter * chassis_control->wz_set / 3 + chassis_control->vx_set * 2 / 3;
+
+    for (uint8_t i = 0; i < motor_3505_num; i++)
+    {
+        motor_Date[i].target_motor_speed = motor_speed_calc[i];
+    }
+
+    chassis_speed_pid_calc(chassis_control);
+    CAN_cmd_3508(motor_Date[0].out_current, motor_Date[1].out_current, motor_Date[2].out_current, motor_Date[3].out_current);
 }
 
 // 设定摇杆死区为10
@@ -423,6 +467,62 @@ void ops9_data_clear_check(void)
     }
 }
 
+void chasssis_move_in_limited_space(float R)
+{
+    float out_x_speed_reference, out_y_speed_reference, theta;
+
+    if (task_flags.mode_switched_flag == 1)
+    {
+        move_space_state = RESET_LIMITE;
+    }
+
+    switch (move_space_state)
+    {
+    case RESET_LIMITE:
+        // 将当前位置设为起始中心点
+        Update_XY(0, 0);
+        move_space_state = LIMITED;
+        break;
+
+    case LIMITED:
+        if (chassis_move_state == NOT_MOVEING)
+        {
+            float out_of_rangeX_value = ops9_data.pos_x - 0;
+            float out_of_rangeY_value = ops9_data.pos_x - 0;
+
+            float value = sqrt(pow(out_of_rangeX_value, 2) + pow(out_of_rangeY_value, 2));
+
+            if (fabsf(value) > R)
+            {
+                theta = atan2(out_of_rangeX_value, out_of_rangeY_value);
+
+                chassis_space_limite_pid.NowError = value - R;
+                PID_AbsoluteMode(&chassis_space_limite_pid);
+
+                out_x_speed_reference = chassis_space_limite_pid.PIDout * cos(theta);
+                out_y_speed_reference = chassis_space_limite_pid.PIDout * sin(theta);
+
+                chassis_control.vy = out_y_speed_reference;
+                chassis_control.vx = out_x_speed_reference;
+            }
+            else
+            {
+                chassis_control.vx = 0;
+                chassis_control.vy = 0;
+            }
+        }
+        else if (chassis_move_state == IS_MOVEING)
+        {
+        }
+
+        break;
+    }
+}
+
+
+
+
+
 /**
  * @brief 执行机器人底盘发球动作控制
  * @param chassis_control 底盘控制结构体指针
@@ -443,18 +543,18 @@ void ACTION_chassis_serve_a_ball(chassis_control_t *chassis_control)
 
 void ACTION_chassis_recive_ball(chassis_control_t *chassis_control)
 {
-    chassis_stop_flag = 0;   
+    chassis_stop_flag = 0;
     chassis_volleyball_track();
-    chassis_speed_pid_calc(chassis_control);
-    CAN_cmd_3508(motor_Date[0].out_current, motor_Date[1].out_current, motor_Date[2].out_current, motor_Date[3].out_current);
+
+    chassis_move(chassis_control);
 }
 
 void ACTION_keep_ball_in_center(chassis_control_t *chassis_control)
 {
     chassis_stop_flag = 0;
-    keep_ball_in_center_track();
-    chassis_speed_pid_calc(chassis_control);
-    CAN_cmd_3508(motor_Date[0].out_current, motor_Date[1].out_current, motor_Date[2].out_current, motor_Date[3].out_current);
+    //keep_ball_in_center_track();
+
+    chassis_move(chassis_control);
 }
 
 void ACTION_chassis_stop(chassis_control_t *chassis_control)
@@ -468,6 +568,17 @@ void ACTION_chassis_stop(chassis_control_t *chassis_control)
     chassis_stop_pid_calc(chassis_control);
     CAN_cmd_3508(motor_Date[0].out_current, motor_Date[1].out_current, motor_Date[2].out_current, motor_Date[3].out_current);
 }
+
+void ACTION_chassis_move_limite_test(chassis_control_t *chassis_control)
+{
+
+    chasssis_move_in_limited_space(200);
+    chassis_move(chassis_control);
+}
+
+
+
+
 // 自动模式运动计算
 
 // 似乎击球后球拍控制有问题了，得大改

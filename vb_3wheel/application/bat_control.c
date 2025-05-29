@@ -70,6 +70,7 @@ extern visInf_t s_visionInform; // 视觉数据结构体
 first_order_filter_type_t filter_angle;
 top_inverse_calculation_angle inverse_calculation_angle;
 bat_state_t bat_state;             // 球拍状态机
+bat_state_t bat_toward_state;      // 球拍状态机,接球
 serve_ball_t serve_state;          // 发球状态机
 striker_reading_t striker_reading; // 击球准备状态机
 
@@ -90,7 +91,7 @@ static void ACTION_all_reset(void);
 static void ACTION_artifical_bat(bat_control_t *bat_control);
 static void ACTION_up_receive_a_ball(void);
 static void ACTION_receive_a_ball(void);
-static void ACTION_bat_hit(float aim_z);
+static void ACTION_back_to_start_state(bat_control_t *bat_control);
 
 static bool_t ACTION_bat_MOVE(float aim_x, float aim_y, float aim_z, float need_pitch);
 
@@ -119,7 +120,7 @@ void bat_motor_Init(bat_control_t *bat_control)
     const static fp32 input_set_Y_num[1] = {0.8f};
     const static fp32 input_set_Z_num[1] = {0.4f};
 
-        /***********初始化PID参数***********/
+    /***********初始化PID参数***********/
     for (int i = 0; i < 3; i++)
     {
         pid_abs_param_init(&bat_control->DM_Motor_PID_angle[i], DM4340_ANGLE_PID_KP, DM4340_ANGLE_PID_KI, DM4340_ANGLE_PID_KD, DM4340_ANGLE_PID_MAX_IOUT, DM4340_ANGLE_PID_MAX_OUT);
@@ -134,7 +135,6 @@ void bat_motor_Init(bat_control_t *bat_control)
     pid_abs_param_init(&bat_control->STRIKER_3508_PID_angle, STRIKER_3508_ANGLE_PID_KP, STRIKER_3508_ANGLE_PID_KI, STRIKER_3508_ANGLE_PID_KD, STRIKER_3508_ANGLE_PID_MAX_IOUT, STRIKER_3508_ANGLE_PID_MAX_OUT);
     pid_abs_param_init(&bat_control->STRIKER_3508_PID_speed, STRIKER_3508_SPEED_PID_KP, STRIKER_3508_SPEED_PID_KI, STRIKER_3508_SPEED_PID_KD, STRIKER_3508_SPEED_PID_MAX_IOUT, STRIKER_3508_SPEED_PID_MAX_OUT);
     /*************************************/
-
 
     // 初始化电机
     for (uint8_t i = 0; i < 5; i++)
@@ -190,7 +190,7 @@ void striker_new_init(void)
     int cout = 0;
     while (task_flags.sensor_is_blocked == 0)
     {
-        if (motor_Date[4].target_motor_speed < 70)
+        if (motor_Date[4].target_motor_speed < 90)
         {
             motor_Date[4].target_motor_speed += 0.5f;
         }
@@ -231,6 +231,7 @@ void striker_new_init(void)
     CAN_cmd_striker(motor_Date[4].out_current, motor_Date[5].out_current);
 
     bat_control.set_striker_angle = 0.0f;
+    task_flags.striker_Init_flag = 1;
 }
 
 /**
@@ -333,6 +334,7 @@ void bat_motor_control(bat_control_t *bat_control)
     // MD4340_motor_PID_Control(&hcan2, 0x03, 0);
     // osDelay(1);
 
+    // 改赋值顺序是因为解算的关系电机编号有点问题
     MD4340_motor_PID_Control(&hcan2, 0x02, DM4340_Date[1].out_current);
     osDelay(1);
     MD4340_motor_PID_Control(&hcan2, 0x01, DM4340_Date[0].out_current);
@@ -364,17 +366,17 @@ void bat_action(bat_control_t *bat_control)
     // delta_arm_inverse_calculation(bat_control , 0 , 0, 0);
     if (robot_StateMode.roboMode == ARTIFICAL_BAT) // 机器人模式为4时，使用遥控器控制球拍
     {
-
+        ACTION_back_to_start_state(bat_control);
         ACTION_artifical_bat(bat_control);
     }
     else if (robot_StateMode.roboMode == ARTIFICAL_CHASSIS) // 机器人模式为AUTO_RECEIVE_BALL时，使用遥控器控制球拍
     {
         // 使用球拍自动接球
-        //ACTION_up_receive_a_ball();
+        // ACTION_up_receive_a_ball();
     }
     else if (robot_StateMode.roboMode == ARTIFICAL_STRIKER) // 机器人模式为ARTIFICAL_STRIKER时，使用遥控器控制击球杆
     {
-
+        ACTION_back_to_start_state(bat_control);
         // hit_ball_launch(bat_control);
         // ACTION_striker_move();
         // int control_falg = 0;
@@ -387,7 +389,7 @@ void bat_action(bat_control_t *bat_control)
     }
     else if (robot_StateMode.roboMode == ROBOT_DEBUG)
     {
-        ACTION_receive_a_ball();
+        // ACTION_receive_a_ball();
     }
     else if (robot_StateMode.roboMode == MODE_STOP)
     {
@@ -400,9 +402,9 @@ void bat_action(bat_control_t *bat_control)
         bat_control->set_striker_angle = 0.0f;
     }
 
-        all_target_clac(bat_control);
-        motor_pid_clac(bat_control);
-        bat_motor_control(bat_control);
+    all_target_clac(bat_control);
+    motor_pid_clac(bat_control);
+    bat_motor_control(bat_control);
     // 计算所有目标位置和角度，输入参量
 }
 
@@ -412,6 +414,7 @@ void bat_action(bat_control_t *bat_control)
 /// @param minValue 最小值
 /// @param maxValue 最大值
 /// @return
+
 float float_constrain(float Value, float minValue, float maxValue)
 {
     if (Value < minValue)
@@ -470,6 +473,26 @@ void judge_bat_pos(bat_control_t *bat_control)
     }
 }
 
+// 一旦模式切换，清空所有标志位，回一次初始位置
+void ACTION_back_to_start_state(bat_control_t *bat_control)
+{
+    if (task_flags.mode_switched_flag == 1)
+    {
+        // 标志位清零
+        bat_state = 0;
+        serve_state = 0;     // 发球状态机
+        striker_reading = 0; // 击球准备状态机
+
+        bat_control->set_x = 0.0f;
+        bat_control->set_y = 0.0f;
+        bat_control->set_z = 0.0f;
+        bat_posion_set(bat_control->set_x, bat_control->set_y, bat_control->set_z);
+        bat_control->set_pitch = 95.0f;
+        bat_control->set_striker_angle = 0.0f;
+    }
+    else
+        return;
+}
 
 /**
  * @brief 控制击球机构运动到指定位置
@@ -513,6 +536,18 @@ void ACTION_up_receive_a_ball(void)
     // 接球状态机 receive ball state machine
     switch (bat_state)
     {
+    case BAT_INIT:
+    {
+        bat_control.set_x = 0.0f;
+        bat_control.set_y = 0.0f;
+        bat_control.set_z = 0.0f;
+        bat_posion_set(bat_control.set_x, bat_control.set_y, bat_control.set_z);
+        bat_control.set_pitch = 95.0f;
+        bat_control.set_striker_angle = 0.0f;
+
+        bat_state = BAT_IDLE;
+    }
+    break;
     // when the bat is idle , if the is coming and is in the range of 0.25m,then the bat will hit the ball
     case BAT_IDLE:
         if (s_visionInform.ball_pos_bat.z < 0.25 && s_visionInform.ball_pos_bat.z != 0)
@@ -586,14 +621,28 @@ void ACTION_artifical_bat(bat_control_t *bat_control)
  * @note 当z_usbcam < 0.45时会触发击球动作
  * @note z_usbcam = -1 表示未识别到球
  */
+
+// 针对运动情况改一下识别高度
+
 void ACTION_receive_a_ball(void)
 {
-    switch (bat_state)
+    
+
+    switch (bat_toward_state)
     {
+    case BAT_INIT:
+    {
+
+        bat_control.set_pitch = float_constrain(55, 55, 100);
+        bat_state = BAT_IDLE;
+    }
+    break;
+
     case BAT_IDLE:
-        if (s_visionInform.ball_pos_bat.z < 0.25f && s_visionInform.ball_pos_bat.z != 0)
+        if (s_visionInform.ball_pos_bat_60.z < 0.25f && s_visionInform.ball_pos_bat_60.z != 0 &&
+            fabs(s_visionInform.ball_pos_bat_60.x) < 0.3f && fabs(s_visionInform.ball_pos_bat_60.y) < 0.3f)
         {
-            bat_state = BAT_HITTING;
+            bat_toward_state = BAT_HITTING;
             state_start_time = HAL_GetTick();
             bat_posion_set(0, 0, 70);
         }
@@ -602,7 +651,7 @@ void ACTION_receive_a_ball(void)
     case BAT_HITTING:
         if (HAL_GetTick() - state_start_time > 200)
         { // 击打动作完成时间
-            bat_state = BAT_COOLDOWN;
+            bat_toward_state = BAT_COOLDOWN;
             state_start_time = HAL_GetTick();
             bat_posion_set(0, 0, 0);
         }
@@ -611,15 +660,10 @@ void ACTION_receive_a_ball(void)
     case BAT_COOLDOWN:
         if (HAL_GetTick() - state_start_time > 300)
         {
-            bat_state = BAT_IDLE;
+            bat_toward_state = BAT_IDLE;
         }
         break;
     }
-    // all_target_clac(&bat_control);
-    // motor_pid_clac(&bat_control);
-    // bat_motor_control(&bat_control);
-
-    // bat_posion_set(0, 0, 70);
 }
 
 //////////////////////发球动作//////////////////////////
@@ -627,9 +671,9 @@ void ACTION_receive_a_ball(void)
 void ACTION_striker_move(void)
 {
 
-    if(task_flags.mode_switched_flag == 1)
+    if (task_flags.mode_switched_flag == 1)
     {
-        striker_reading = STRIKER_START;
+        
     }
 
     // 进入击球状态前的准备函数
@@ -642,8 +686,8 @@ void ACTION_striker_move(void)
 
     case STRIKER_MOVEING:
         float tick = (HAL_GetTick() - ready_state_time);
-        float angle = (80 * tick / 2000);
-        bat_control.set_striker_angle = float_constrain(angle, -120, 80);
+        float angle = (60 * tick / 2000);
+        bat_control.set_striker_angle = float_constrain(angle, -120, 60);
         if (HAL_GetTick() - ready_state_time > 2000)
         {
             striker_reading = SERVE_COMPLETE;
@@ -654,27 +698,32 @@ void ACTION_striker_move(void)
 
         break;
     }
-//////以上已测试////////////切换模式有问题，该写一个切换模式的检测/////
-///////////////////////////////////////////////////////////////////
-
+    //////以上已测试////////////切换模式有问题，该写一个切换模式的检测/////
+    ///////////////////////////////////////////////////////////////////
 
     switch (serve_state)
     {
         // 垫球两次后开始发球，超时跳出
+        case SEAVE_INIT:
+        if ( striker_reading == SERVE_COMPLETE)
+        {
+            serve_state = SERVE_IDLE;
+        }
 
+        break;
     case SERVE_IDLE:
         if (bat_control.control_RC->rc.ch[2] > 500 && bat_control.control_RC->rc.ch[0] == 0 && striker_reading == SERVE_COMPLETE)
-        {                                         // 等待发球指令(遥控器触发)
-            //bat_control.striker_action_state = 1; // 下手球发球
+        { // 等待发球指令(遥控器触发)
+            // bat_control.striker_action_state = 1; // 下手球发球
             serve_state = BAT_HITTING_UP1;
             serve_state_start_time = HAL_GetTick();
-            bat_posion_set(0, 0, 70); // 球拍上抬
+            bat_posion_set(0, 0, 80); // 球拍上抬
         }
         break;
 
     case BAT_HITTING_UP1:
         // 击球ing
-        if (HAL_GetTick() - serve_state_start_time > 200)
+        if (HAL_GetTick() - serve_state_start_time > 100)
         {
             serve_state = WITE_FOR_BALL;
             serve_state_start_time = HAL_GetTick();
@@ -686,7 +735,7 @@ void ACTION_striker_move(void)
     case WITE_FOR_BALL:
         // 击球ing
         if (HAL_GetTick() - serve_state_start_time > 100 && s_visionInform.ball_pos_bat.z > 0 &&
-            s_visionInform.ball_pos_bat.z < 0.25f)
+            s_visionInform.ball_pos_bat.z < 0.10f)
         {
             serve_state = BAT_HITTING_UP2;
             serve_state_start_time = HAL_GetTick();
@@ -706,13 +755,19 @@ void ACTION_striker_move(void)
             bat_posion_set(0, 0, 0);
             bat_control.set_pitch = float_constrain(55, 55, 100);
             // 此处要设定球拍前倾
+
+            // serve_state = SERVE_COOLDOWN;     // 冷却状态;
+            // serve_state_start_time = HAL_GetTick();
+            // bat_posion_set(0, 0, 0);
+            //bat_control.set_pitch = float_constrain(55, 55, 100);
+            // 此处要设定球拍前倾
         }
         break;
 
     case WAIT_FOR_BALL_DOWN:
         // 等待球下落到击打高度
         if (s_visionInform.ball_pos_bat.z > 0 &&
-            s_visionInform.ball_pos_bat.z < 0.4f)
+            s_visionInform.ball_pos_bat.z < 0.f)
         {
             serve_state = STRIKER_HITTING;
             serve_state_start_time = HAL_GetTick();
@@ -738,8 +793,8 @@ void ACTION_striker_move(void)
     case STRIKER_RETURNING:
         // 击球杆缓慢复位
         float tick = HAL_GetTick() - serve_state_start_time;
-        float angle = (200 * tick / 2000) - 120;
-        bat_control.set_striker_angle = float_constrain(angle, -120, 80);
+        float angle = (180 * tick / 2000) - 120;
+        bat_control.set_striker_angle = float_constrain(angle, -120, 60);
 
         if (HAL_GetTick() - serve_state_start_time > 2000)
         {
@@ -758,26 +813,24 @@ void ACTION_striker_move(void)
 
     case OVERTIME_RETURNING:
         // 超时响应
-        if(bat_control.set_striker_angle == 80)
+        if (bat_control.set_striker_angle == 80)
         {
             serve_state = SERVE_COOLDOWN;
         }
 
         break;
     }
-
 }
 
 void ACTION_all_reset(void)
 {
-        bat_control.set_x = 0.0f;
-        bat_control.set_y = 0.0f;
-        bat_control.set_z = 0.0f;
-        bat_posion_set(bat_control.set_x, bat_control.set_y, bat_control.set_z);
-        bat_control.set_pitch = 95.0f;
-        bat_control.set_striker_angle = 0.0f;
+    bat_control.set_x = 0.0f;
+    bat_control.set_y = 0.0f;
+    bat_control.set_z = 0.0f;
+    bat_posion_set(bat_control.set_x, bat_control.set_y, bat_control.set_z);
+    bat_control.set_pitch = 95.0f;
+    bat_control.set_striker_angle = 0.0f;
 }
-
 
 /**
  * @brief 计算三角洲机械臂的逆运动学
@@ -885,8 +938,6 @@ void Forward_Kinematics(bat_control_t *bat_control, float theta1, float theta2, 
     bat_control->CurrentPoint.z = Z + 220;
 }
 
-
-
 ////////////////////////////////////////////////////////////////
 //////////////////////    废案区   /////////////////////////////
 ///////////////////////////////////////////////////////////////
@@ -969,7 +1020,6 @@ void Forward_Kinematics(bat_control_t *bat_control, float theta1, float theta2, 
 // bat_motor_control(&bat_control);
 // }
 
-
 // void ACTION_bat_hit(float aim_z)
 // {
 
@@ -1045,7 +1095,6 @@ void delta_arm_inverse_calculation(float x, float y, float z,  top_inverse_calcu
     angle->angle03 = (180 * (2 * atan(T3))) / PI;
 }
 */
-
 
 // /// @brief // 计算移动距离
 // /// @param point1

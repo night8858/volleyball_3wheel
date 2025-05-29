@@ -67,6 +67,20 @@
 #define CHASSIS_ACCEL_X_NUM 0.1666666667f
 #define CHASSIS_ACCEL_Y_NUM 0.1666666667f
 
+typedef enum{
+
+    RESET_LIMITE,         //重设运动空间中
+    LIMITED               //运动空间约束中
+
+}move_space_state_e;
+
+typedef enum{
+    IS_MOVEING,             //运动中
+    NOT_MOVEING             //停止
+
+}chassis_move_state_e;
+
+
 typedef struct
 {
     float kp;
@@ -217,7 +231,6 @@ typedef struct
 // extern void chasis_Task(void const * argument);
 
 void chassis_init(chassis_control_t *init);
-void motor_control_send(chassis_control_t *control_loop);
 void chassis_feedback_update(chassis_control_t *feedback_update);
 void chassis_movement_calc(chassis_control_t *motor_control);
 void rc_to_motor_set(chassis_control_t *motor_control);

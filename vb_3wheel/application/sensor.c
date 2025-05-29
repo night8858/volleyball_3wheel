@@ -251,12 +251,16 @@ void usart6_send(char *data, uint8_t num)
 
 
 /* 数据清零 */
+/**
+ * @brief 发送零位清除指令到传感器
+ * 
+ * 该函数通过USART6发送"ACT0"指令，用于清除传感器的零位设置。
+ */
 void ops9_Zero_Clearing(void)
 {
 	char zero_clear[4] = "ACT0";
 	usart6_send(zero_clear,sizeof(zero_clear));
 }
-
 
 
 /* 设定当前yaw角度 - -180~180 */

@@ -210,20 +210,15 @@ void tracking_init(s_tracking_data_t *tracking_data)
     tracking_data->mid_traget_USBCAM_y = 240;
 
     // 初始化追踪pid参数
-    pid_abs_param_init(&volleyball_track_X_PID_pos, 3200, 0, 0, 1000, 5000);
+    pid_abs_param_init(&volleyball_track_X_PID_pos, 6200, 0, 20, 1000, 8000);
     // pid_abs_param_init(&volleyball_track_far_PID_speed, 1, 0, 0, 1000, 2000);
 
-    pid_abs_param_init(&volleyball_track_Y_PID_pos, 3200, 0, 0, 1000, 5000);
+    pid_abs_param_init(&volleyball_track_Y_PID_pos, 4800, 0, 0, 1000, 8000);
     // pid_abs_param_init(&volleyball_track_close_PID_speed, 1, 0, 0, 1000, 2000);
 
     pid_abs_param_init(&serveing_tracking_pid, 100, 0, 0, 1000, 4000);
 }
 
-
-void ball_real_pos_calc(void)
-{
-
-}
 
 /**
  * @brief 排球追踪控制函数
@@ -248,16 +243,16 @@ void chassis_volleyball_track(void)
             volleyball_track_X_PID_pos.NowError = 0 - offset_x;
             PID_AbsoluteMode(&volleyball_track_X_PID_pos);
             // 相当于平行移动寻找排球位置
-            // 决定底盘速度,此处vy实际为vx，底盘解算坐标系选错了
-            chassis_control.vy_set = volleyball_track_X_PID_pos.PIDout;
+
+            chassis_control.vx_set = volleyball_track_X_PID_pos.PIDout;
         }
-        if (fabsf(offset_y) < 2 && s_visionInform.ball_pos_bat.y < 2.0f)
+        if (fabsf(offset_y) < 2 && s_visionInform.ball_pos_bat_60.y < 1.2f)
         {
-            volleyball_track_X_PID_pos.NowError = 0 - offset_x;
-            PID_AbsoluteMode(&volleyball_track_X_PID_pos);
+            volleyball_track_Y_PID_pos.NowError = 0 - offset_x;
+            PID_AbsoluteMode(&volleyball_track_Y_PID_pos);
             // 相当于前后移动寻找排球位置
-            // 决定底盘速度,此处vx实际为vy，底盘解算坐标系选错了
-             chassis_control.vy_set = volleyball_track_X_PID_pos.PIDout;
+
+             //chassis_control.vy_set = volleyball_track_Y_PID_pos.PIDout;
         }
     }
     else
@@ -265,15 +260,13 @@ void chassis_volleyball_track(void)
         chassis_control.vx_set = 0;
         chassis_control.vy_set = 0;
     }
-
-    motor_speed_calc[0] = 0.4067f * chassis_control.wz_set + chassis_control.vx_set * sqrt(3) / 2 - chassis_control.vy_set / 2;
-    motor_speed_calc[1] = 0.4067f * chassis_control.wz_set - chassis_control.vx_set * sqrt(3) / 2 - chassis_control.vy_set / 2;
-    motor_speed_calc[2] = 0.4067f * chassis_control.wz_set + chassis_control.vy_set;
-    
-    for (uint8_t i = 0; i < motor_3505_num; i++)
-    {
-        motor_Date[i].target_motor_speed = motor_speed_calc[i];
-    }
+    //     motor_speed_calc[0] = 0.4067f * chassis_control.wz_set - chassis_control.vy_set * sqrt(3) / 2 - chassis_control.vx_set / 2;
+    //     motor_speed_calc[1] = 0.4067f * chassis_control.wz_set - chassis_control.vy_set * sqrt(3) / 2 + chassis_control.vx_set / 2;
+    //     motor_speed_calc[2] = 0.4067f * chassis_control.wz_set + chassis_control.vx_set;
+    //      for (uint8_t i = 0; i < motor_3505_num; i++)
+    // {
+    //     motor_Date[i].target_motor_speed = motor_speed_calc[i];
+    // }
 
 
 }
@@ -281,7 +274,7 @@ void chassis_volleyball_track(void)
 void keep_ball_in_center_track(void)
 {
     float motor_speed_calc[3] = {0};
-    if (s_visionInform.ball_pos_bat.x != 0 || s_visionInform.ball_pos_bat.y != 0 || s_visionInform.ball_pos_bat.z > 0.10)
+    if (s_visionInform.ball_pos_bat.x != 0 || s_visionInform.ball_pos_bat.y != 0 || s_visionInform.ball_pos_bat.z > 0.08)
     {
 
         float offset_x = s_visionInform.ball_pos_bat.x - 0; // 0.02为相机安装偏置
@@ -293,7 +286,7 @@ void keep_ball_in_center_track(void)
             PID_AbsoluteMode(&volleyball_track_X_PID_pos);
             // 相当于平行移动寻找排球位置
             // 决定底盘速度,此处vy实际为vx，底盘解算坐标系选错了
-            chassis_control.vy_set = volleyball_track_X_PID_pos.PIDout;
+            chassis_control.vx_set = volleyball_track_X_PID_pos.PIDout;
         }
         if (fabsf(offset_y) < 2)
         {
@@ -301,7 +294,7 @@ void keep_ball_in_center_track(void)
             PID_AbsoluteMode(&volleyball_track_Y_PID_pos);
             // 相当于平行移动寻找排球位置
             // 决定底盘速度,此处vx实际为vy，底盘解算坐标系选错了
-            chassis_control.vx_set = volleyball_track_Y_PID_pos.PIDout;
+            chassis_control.vy_set = volleyball_track_Y_PID_pos.PIDout;
         }
     }
     else
@@ -310,15 +303,18 @@ void keep_ball_in_center_track(void)
         chassis_control.vy_set = 0;
     }
 
-    motor_speed_calc[0] = 0.4067f * chassis_control.wz_set + chassis_control.vx_set * sqrt(3) / 2 - chassis_control.vy_set / 2;
-    motor_speed_calc[1] = 0.4067f * chassis_control.wz_set - chassis_control.vx_set * sqrt(3) / 2 - chassis_control.vy_set / 2;
-    motor_speed_calc[2] = 0.4067f * chassis_control.wz_set + chassis_control.vy_set;
-    for (uint8_t i = 0; i < motor_3505_num; i++)
-    {
-        motor_Date[i].target_motor_speed = motor_speed_calc[i];
-    }
+    //     motor_speed_calc[0] = 0.4067f * chassis_control.wz_set - chassis_control.vy_set * sqrt(3) / 2 - chassis_control.vx_set / 2;
+    //     motor_speed_calc[1] = 0.4067f * chassis_control.wz_set - chassis_control.vy_set * sqrt(3) / 2 + chassis_control.vx_set / 2;
+    //     motor_speed_calc[2] = 0.4067f * chassis_control.wz_set + chassis_control.vx_set;
+
+    //     for (uint8_t i = 0; i < motor_3505_num; i++)
+    // {
+    //     motor_Date[i].target_motor_speed = motor_speed_calc[i];
+    // }
 
 }
+
+
 
 
 //      if (s_visionInform.z_hikvision_filter != -1)

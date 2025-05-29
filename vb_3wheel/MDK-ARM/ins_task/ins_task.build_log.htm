@@ -27,115 +27,42 @@ Project File Date:  05/25/2025
 <h2>Output:</h2>
 *** Using Compiler 'V5.06 update 5 (build 528)', folder: 'D:\D P J\ARM\ARMCC\Bin'
 Build target 'ins_task'
-compiling Variables.c...
-..\application\Variables.c(70): warning:  #1-D: last line of file ends without a newline
-  volatile uint8_t robot_start_flag = 0;        //机器人启动标志位
-..\application\Variables.c: 1 warning, 0 errors
-compiling usbd_cdc_if.c...
-compiling can_recv.c...
-..\application\can_recv.c(189): warning:  #177-D: variable "_pos"  was declared but never referenced
-      float _pos, _vel, _KP, _KD = {0};
-..\application\can_recv.c(189): warning:  #177-D: variable "_vel"  was declared but never referenced
-      float _pos, _vel, _KP, _KD = {0};
-..\application\can_recv.c(189): warning:  #177-D: variable "_KP"  was declared but never referenced
-      float _pos, _vel, _KP, _KD = {0};
-..\application\can_recv.c(189): warning:  #177-D: variable "_KD"  was declared but never referenced
-      float _pos, _vel, _KP, _KD = {0};
-..\application\can_recv.c(223): warning:  #177-D: variable "_pos"  was declared but never referenced
-      float _pos, _vel, _KP, _KD = {0};
-..\application\can_recv.c(223): warning:  #177-D: variable "_vel"  was declared but never referenced
-      float _pos, _vel, _KP, _KD = {0};
-..\application\can_recv.c(223): warning:  #177-D: variable "_KP"  was declared but never referenced
-      float _pos, _vel, _KP, _KD = {0};
-..\application\can_recv.c(223): warning:  #177-D: variable "_KD"  was declared but never referenced
-      float _pos, _vel, _KP, _KD = {0};
-..\application\can_recv.c(377): warning:  #177-D: variable "T_int"  was declared but never referenced
-      int T_int = RxDate[6];
-..\application\can_recv.c(23): warning:  #177-D: variable "RM6020_tx_message"  was declared but never referenced
-  static CAN_TxHeaderTypeDef RM6020_tx_message; // can_6020发送邮�?
-..\application\can_recv.c(35): warning:  #177-D: variable "can_6020_send_data"  was declared but never referenced
-  static uint8_t can_6020_send_data[8];
-..\application\can_recv.c: 11 warnings, 0 errors
-compiling Bat_control_task.c...
-compiling robot.c...
-compiling tracking.c...
-..\application\tracking.c(284): warning:  #1035-D: single-precision operand implicitly converted to double-precision
-      if (s_visionInform.ball_pos_bat.x != 0 || s_visionInform.ball_pos_bat.y != 0 || s_visionInform.ball_pos_bat.z > 0.10)
-..\application\tracking.c(411): warning:  #1-D: last line of file ends without a newline
-  */
-..\application\tracking.c: 2 warnings, 0 errors
-compiling pc_interface.c...
-..\application\pc_interface.c(117): warning:  #1035-D: single-precision operand implicitly converted to double-precision
-  	float cos_theta = cosf(theta * 0.017453292);
-..\application\pc_interface.c(118): warning:  #1035-D: single-precision operand implicitly converted to double-precision
-  	float sin_theta = sinf(theta * 0.017453292);
-..\application\pc_interface.c(119): warning:  #1035-D: single-precision operand implicitly converted to double-precision
-  	float cos_alpha = cosf(alpha * 0.017453292);
-..\application\pc_interface.c(120): warning:  #1035-D: single-precision operand implicitly converted to double-precision
-  	float sin_alpha = sinf(alpha * 0.017453292);
-..\application\pc_interface.c(115): warning:  #177-D: variable "tx"  was declared but never referenced
-  	float tx , ty ,yz;
-..\application\pc_interface.c(115): warning:  #177-D: variable "ty"  was declared but never referenced
-  	float tx , ty ,yz;
-..\application\pc_interface.c(115): warning:  #177-D: variable "yz"  was declared but never referenced
-  	float tx , ty ,yz;
-..\application\pc_interface.c(160): warning:  #1035-D: single-precision operand implicitly converted to double-precision
-  	float cos_theta = cosf(theta * 0.017453292);
-..\application\pc_interface.c(161): warning:  #1035-D: single-precision operand implicitly converted to double-precision
-  	float sin_theta = sinf(theta * 0.017453292);
-..\application\pc_interface.c(162): warning:  #1035-D: single-precision operand implicitly converted to double-precision
-  	float cos_alpha = cosf(alpha * 0.017453292);
-..\application\pc_interface.c(163): warning:  #1035-D: single-precision operand implicitly converted to double-precision
-  	float sin_alpha = sinf(alpha * 0.017453292);
-..\application\pc_interface.c(158): warning:  #177-D: variable "tx"  was declared but never referenced
-  	float tx , ty ,yz;
-..\application\pc_interface.c(158): warning:  #177-D: variable "ty"  was declared but never referenced
-  	float tx , ty ,yz;
-..\application\pc_interface.c(158): warning:  #177-D: variable "yz"  was declared but never referenced
-  	float tx , ty ,yz;
-..\application\pc_interface.c: 14 warnings, 0 errors
-compiling Chassis_task.c...
 compiling bat_control.c...
-..\application\bat_control.c(518): warning:  #1035-D: single-precision operand implicitly converted to double-precision
+..\application\bat_control.c(482): warning:  #188-D: enumerated type mixed with another type
+          bat_state = 0;
+..\application\bat_control.c(483): warning:  #188-D: enumerated type mixed with another type
+          serve_state = 0;     // 发球状态机
+..\application\bat_control.c(484): warning:  #188-D: enumerated type mixed with another type
+          striker_reading = 0; // 击球准备状态机
+..\application\bat_control.c(553): warning:  #1035-D: single-precision operand implicitly converted to double-precision
           if (s_visionInform.ball_pos_bat.z < 0.25 && s_visionInform.ball_pos_bat.z != 0)
-..\application\bat_control.c(644): warning:  #1182-D: a declaration cannot have a label
+..\application\bat_control.c(688): warning:  #1182-D: a declaration cannot have a label
           float tick = (HAL_GetTick() - ready_state_time);
-..\application\bat_control.c(636): warning:  #546-D: transfer of control bypasses initialization of:
-            variable "tick"  (declared at line 644)
-            variable "angle"  (declared at line 645)
+..\application\bat_control.c(680): warning:  #546-D: transfer of control bypasses initialization of:
+            variable "tick"  (declared at line 688)
+            variable "angle"  (declared at line 689)
       switch (striker_reading)
       ^
-..\application\bat_control.c(740): warning:  #1182-D: a declaration cannot have a label
+..\application\bat_control.c(795): warning:  #1182-D: a declaration cannot have a label
           float tick = HAL_GetTick() - serve_state_start_time;
-..\application\bat_control.c(661): warning:  #546-D: transfer of control bypasses initialization of:
-            variable "tick"  (declared at line 740)
-            variable "angle"  (declared at line 741)
+..\application\bat_control.c(704): warning:  #546-D: transfer of control bypasses initialization of:
+            variable "tick"  (declared at line 795)
+            variable "angle"  (declared at line 796)
       switch (serve_state)
       ^
-..\application\bat_control.c(85): warning:  #177-D: function "ACTION_serve_a_ball"  was declared but never referenced
+..\application\bat_control.c(86): warning:  #177-D: function "ACTION_serve_a_ball"  was declared but never referenced
   static void ACTION_serve_a_ball(void);
-..\application\bat_control.c(771): warning:  #177-D: function "ACTION_all_reset"  was declared but never referenced
+..\application\bat_control.c(825): warning:  #177-D: function "ACTION_all_reset"  was declared but never referenced
   void ACTION_all_reset(void)
-..\application\bat_control.c(511): warning:  #177-D: function "ACTION_up_receive_a_ball"  was declared but never referenced
+..\application\bat_control.c(534): warning:  #177-D: function "ACTION_up_receive_a_ball"  was declared but never referenced
   void ACTION_up_receive_a_ball(void)
-..\application\bat_control.c(93): warning:  #177-D: function "ACTION_bat_hit"  was declared but never referenced
-  static void ACTION_bat_hit(float aim_z);
-..\application\bat_control.c(486): warning:  #177-D: function "ACTION_bat_MOVE"  was declared but never referenced
+..\application\bat_control.c(509): warning:  #177-D: function "ACTION_bat_MOVE"  was declared but never referenced
   bool_t ACTION_bat_MOVE(float aim_x, float aim_y, float aim_z, float need_pitch)
-..\application\bat_control.c: 10 warnings, 0 errors
-compiling main.c...
-compiling remote_control.c...
-compiling Debug_task..c...
-compiling chassis.c...
-compiling striker_task.c...
-compiling INS_task.c...
-..\application\INS_task.c(334): warning:  #550-D: variable "pitchLast"  was set but never used
-      static float yawLast,pitchLast,rollLast;
-..\application\INS_task.c: 1 warning, 0 errors
+..\application\bat_control.c: 12 warnings, 0 errors
 linking...
-Program Size: Code=95112 RO-data=1924 RW-data=840 ZI-data=57104  
+Program Size: Code=99536 RO-data=2108 RW-data=844 ZI-data=57164  
 FromELF: creating hex file...
-"ins_task\ins_task.axf" - 0 Error(s), 39 Warning(s).
+"ins_task\ins_task.axf" - 0 Error(s), 12 Warning(s).
 
 <h2>Software Packages used:</h2>
 
@@ -158,7 +85,7 @@ Package Vendor: Keil
 <h2>Collection of Component Files used:</h2>
 
    * Component: ARM::CMSIS:CORE:5.0.1
-Build Time Elapsed:  00:00:11
+Build Time Elapsed:  00:00:04
 </pre>
 </body>
 </html>

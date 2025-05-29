@@ -42,6 +42,7 @@ typedef struct
   volatile uint8_t Init_complete_flag;
   volatile uint8_t chassis_Init_flag;
   volatile uint8_t bat_control_Init_flag;
+  volatile uint8_t striker_Init_flag;
   volatile char sensor_is_blocked;
   volatile uint8_t mode_switched_flag;    //模式切换标志位
 
